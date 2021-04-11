@@ -51,7 +51,7 @@
 
         <TextBlock Grid.Row="2" Margin="5" Text="Receiver account" FontWeight="Regular" />
         <DockPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2">
-            <TextBox Margin="5" Text="{Binding ReceiverAccount}" HorizontalAlignment="Left" Width="150" />
+            <TextBox Margin="5" Text="{Binding ReceiverAccount, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" Width="150" />
             <TextBlock Text="Account number - message receiver" Margin="5" FontWeight="Thin" />
         </DockPanel>
 
@@ -79,18 +79,13 @@
 
         <TextBlock Grid.Row="5" Margin="5" Text="Identifier" FontWeight="Regular" />
         <DockPanel Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2">
-            <TextBox Margin="5" Grid.ColumnSpan="2" Text="{Binding Identifier}" Width="250" />
+            <TextBox Margin="5" Grid.ColumnSpan="2" Text="{Binding Identifier, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" Width="250" />
             <Button Width="100" Margin="5" Content="Generate new" Command="{Binding GenerateGuidCommand}" />
             <TextBlock Text="Useful to group message parts when Sequence is used" Margin="5" FontWeight="Thin" />
         </DockPanel>
-        
-        
-        
-        
+
         <TextBlock Grid.Row="6" Margin="5" Text="Message" FontWeight="Regular" />
-        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" Margin="5" Text="{Binding Message}" />
-
-
+        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" Margin="5" Text="{Binding Message, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" />
 
         <Button Grid.Row="7" Grid.Column="1" Content="Send" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
         <Button Grid.Row="7" Grid.Column="2" Content="Clear fields" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding ClearCommand}" />

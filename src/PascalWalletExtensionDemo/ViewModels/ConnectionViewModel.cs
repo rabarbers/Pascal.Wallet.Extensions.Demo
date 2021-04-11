@@ -13,13 +13,13 @@ namespace PascalWalletExtensionDemo.ViewModels
         {
             _connectorHolder = connectorHolder;
 
-            Address = "127.0.0.1";
-            Port = 4003;
-            SaveCommand = new RelayCommand(SaveSettings, parameter => CanSaveSettings());
-            SaveSettings();
+            Address = Properties.Settings.Default.WalletAddress;
+            Port = Properties.Settings.Default.WalletPort;
+            ReconnectCommand = new RelayCommand(ReconnectSettings, parameter => CanReconnectSettings());
+            _connectorHolder.Connector = new PascalConnector(Address, Port);
         }
 
-        public ICommand SaveCommand { get; private set; }
+        public ICommand ReconnectCommand { get; private set; }
 
         public string Address
         {
@@ -41,14 +41,17 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
-        private void SaveSettings()
+        private void ReconnectSettings()
         {
+            Properties.Settings.Default.WalletAddress = Address;
+            Properties.Settings.Default.WalletPort = Port;
+            Properties.Settings.Default.Save();
             _connectorHolder.Connector = new PascalConnector(Address, Port);
         }
 
-        private bool CanSaveSettings()
+        private bool CanReconnectSettings()
         {
-            return !string.IsNullOrEmpty(Address);
+            return !string.IsNullOrEmpty(Address) && (Address != Properties.Settings.Default.WalletAddress || Port != Properties.Settings.Default.WalletPort);
         }
     }
 }

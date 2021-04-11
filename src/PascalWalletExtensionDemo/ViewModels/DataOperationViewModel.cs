@@ -28,7 +28,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             GenerateGuid();
 
             //this should be created on the UI thread
-            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and it accepts connections.", () => InfoMessage = null, true);
+            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections. Then recconnect in connection view.", () => InfoMessage = null, true);
 
             var accountsLoaded = false;
             var timer = new DispatcherTimer();
