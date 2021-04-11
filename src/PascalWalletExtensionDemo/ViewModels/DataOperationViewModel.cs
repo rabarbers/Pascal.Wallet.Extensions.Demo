@@ -1,10 +1,8 @@
-﻿using Pascal.Wallet.Connector;
-using Pascal.Wallet.Connector.DTO;
+﻿using Pascal.Wallet.Connector.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -12,7 +10,7 @@ namespace PascalWalletExtensionDemo.ViewModels
 {
     public class DataOperationViewModel: ViewModelBase
     {
-        private PascalConnector _connector;
+        private IConnectorHolder _holder;
         private InfoMessageViewModel _infoMessage;
         private Account _senderAccount;
         private Account _signerAccount;
@@ -23,26 +21,40 @@ namespace PascalWalletExtensionDemo.ViewModels
         private List<Account> _accounts;
         private List<Account> _accountsWithPasc;
 
-        public DataOperationViewModel(PascalConnector connector)
+        public DataOperationViewModel(IConnectorHolder connectorHolder)
         {
-            _connector = connector;
+            _holder = connectorHolder;
             ReceiverAccount = 834853;
             GenerateGuid();
 
-            InfoMessage = new InfoMessageViewModel("Connecting to Pascal Wallet...", null);
-
             //this should be created on the UI thread
-            var error = new InfoMessageViewModel("Failed to connect to Pascal Wallet", () => Application.Current.Shutdown(), true);
+            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and it accepts connections.", () => InfoMessage = null, true);
 
-            _connector.GetWalletAccountsAsync(max: 300).ContinueWith(task => {
-                if(task.Result.Result != null)
+            var accountsLoaded = false;
+            var timer = new DispatcherTimer();
+            timer.Tick += TimerTick;
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
+            timer.Start();
+            void TimerTick(object sender, EventArgs e)
+            {
+                timer.Stop();
+                timer.Tick -= TimerTick;
+                if (!accountsLoaded)
+                {
+                    InfoMessage = new InfoMessageViewModel("Loading accounts...", null);
+                }
+            }
+
+            _holder.Connector.GetWalletAccountsAsync(max: 1000).ContinueWith(task => {
+                accountsLoaded = true;
+                if (task.Result.Result != null)
                 {
                     Accounts = task.Result.Result.OrderBy(n => n.AccountNumber).ToList();
                     InfoMessage = null;
                 }
                 else
                 {
-                    InfoMessage = error;
+                    InfoMessage = errorInfo;
                 }
             }).ConfigureAwait(false);
 
@@ -52,7 +64,7 @@ namespace PascalWalletExtensionDemo.ViewModels
 
         public async Task SendDataOperation()
         {
-            var sendingDataResponse = await _connector.SendDataAsync(SenderAccount.AccountNumber, ReceiverAccount, Identifier, SignerAccount?.AccountNumber, DataType.ChatMessage, 0, 0, Fee, Message);
+            var sendingDataResponse = await _holder.Connector.SendDataAsync(SenderAccount.AccountNumber, ReceiverAccount, Identifier, SignerAccount?.AccountNumber, DataType.ChatMessage, 0, 0, Fee, Message);
             if (sendingDataResponse.Result != null)
             {
                 InfoMessage = new InfoMessageViewModel($"DataOperation sent successfully.", () => InfoMessage = null);

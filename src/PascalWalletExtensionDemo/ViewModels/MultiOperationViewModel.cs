@@ -9,7 +9,7 @@ namespace PascalWalletExtensionDemo.ViewModels
 {
     public class MultiOperationViewModel: ViewModelBase
     {
-        public MultiOperationViewModel(PascalConnector connector)
+        public MultiOperationViewModel(IConnectorHolder connectorHolder)
         {
 
         }

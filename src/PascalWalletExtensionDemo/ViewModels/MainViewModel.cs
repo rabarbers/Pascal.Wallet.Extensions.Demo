@@ -4,25 +4,26 @@ using System.Windows.Input;
 
 namespace PascalWalletExtensionDemo.ViewModels
 {
-    public class MainViewModel: ViewModelBase
+    public class MainViewModel: ViewModelBase, IConnectorHolder
     {
         private object _mainContent;
+        private ICommand _connectionCommand;
+        private ICommand _dataOperationCommand;
+        private ICommand _multiOperationCommand;
+        private ConnectionViewModel _connectionViewModel;
+        private DataOperationViewModel _dataOperationViewModel;
+        private MultiOperationViewModel _multiOperationViewModel;
         private PascalConnector _connector;
 
         public MainViewModel()
         {
-            _connector = new PascalConnector(address: "127.0.0.1", port: 4003);
-
-            MainContent = new DataOperationViewModel(_connector);
-
-            DataOperationCommand = new RelayCommand(parameter => MainContent = new DataOperationViewModel(_connector));
-            MultiOperationCommand = new RelayCommand(parameter => MainContent = new MultiOperationViewModel(_connector));
-            CloseCommand = new RelayCommand(parameter => Application.Current.Shutdown());
+            MainContent = _connectionViewModel = new ConnectionViewModel(this);
         }
-
-        public ICommand DataOperationCommand { get; private set; }
-        public ICommand MultiOperationCommand { get; private set; }
-        public ICommand CloseCommand { get; private set; }
+       
+        public ICommand ConnectionCommand => _connectionCommand ??= new RelayCommand(() => MainContent = _connectionViewModel ??= new ConnectionViewModel(this)); 
+        public ICommand DataOperationCommand => _dataOperationCommand ??= new RelayCommand(() => MainContent = _dataOperationViewModel ??= new DataOperationViewModel(this));
+        public ICommand MultiOperationCommand => _multiOperationCommand ??= new RelayCommand(() => MainContent = _multiOperationViewModel ??= new MultiOperationViewModel(this));
+        public ICommand CloseCommand => new RelayCommand(parameter => Application.Current.Shutdown());
 
         public object MainContent
         {
@@ -34,6 +35,16 @@ namespace PascalWalletExtensionDemo.ViewModels
                     _mainContent = value;
                     OnPropertyChanged(nameof(MainContent));
                 }
+            }
+        }
+        public PascalConnector Connector
+        {
+            get { return _connector; }
+            set
+            {
+                _connector = value;
+                _dataOperationViewModel = null;
+                _multiOperationViewModel = null;
             }
         }
     }

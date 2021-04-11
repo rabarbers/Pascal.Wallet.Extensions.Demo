@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:PascalWalletExtensionDemo"
         xmlns:ViewModels="clr-namespace:PascalWalletExtensionDemo.ViewModels"
         xmlns:Views="clr-namespace:PascalWalletExtensionDemo.Views"
         mc:Ignorable="d"
@@ -14,8 +13,9 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary>
                     <ViewModels:MainViewModel x:Key="data"/>
-                </ResourceDictionary>
-                <ResourceDictionary>
+                    <DataTemplate DataType="{x:Type ViewModels:ConnectionViewModel}">
+                        <Views:ConnectionView />
+                    </DataTemplate>
                     <DataTemplate DataType="{x:Type ViewModels:DataOperationViewModel}">
                         <Views:DataOperationView />
                     </DataTemplate>
@@ -37,6 +37,7 @@
         </Grid.RowDefinitions>
 
         <Menu IsMainMenu="True" FontSize="14">
+            <MenuItem Header="Connection" Command="{Binding ConnectionCommand}" />
             <MenuItem Header="DataOperation" Command="{Binding DataOperationCommand}" />
             <MenuItem Header="MultiOperation" Command="{Binding MultiOperationCommand}" />
             <MenuItem Header="Exit" Command="{Binding CloseCommand}" />
