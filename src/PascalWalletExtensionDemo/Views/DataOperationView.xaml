@@ -5,8 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ViewModels="clr-namespace:PascalWalletExtensionDemo.ViewModels"
              xmlns:Views="clr-namespace:PascalWalletExtensionDemo.Views"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="850">
     <UserControl.Resources>
         <ResourceDictionary>
             <DataTemplate DataType="{x:Type ViewModels:InfoMessageViewModel}">
@@ -16,6 +16,7 @@
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
@@ -31,27 +32,68 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.ColumnSpan="2" FontSize="16" FontWeight="DemiBold" Margin="0,5,0,0" Text="Create chat message on Pascal coin blockchain" HorizontalAlignment="Center" />
+        <TextBlock Grid.ColumnSpan="4" FontSize="16" FontWeight="DemiBold" Margin="0,5,0,0" Text="Create chat message on Pascal coin blockchain" HorizontalAlignment="Center" />
 
-        <TextBlock Grid.Row="1" Text="Select sender account" Margin="5" />
-        <ComboBox Grid.Row="1" Grid.Column="1" Margin="5" ItemsSource="{Binding Accounts}" SelectedValue="{Binding SenderAccount}" />
-        <TextBlock Grid.Row="2" Margin="5" Text="Select receiver account" />
-        <TextBox Grid.Row="2" Grid.Column="1" Margin="5" Text="{Binding ReceiverAccount}" />
-        <TextBlock Grid.Row="3" Margin="5" Text="Fee" />
-        <DockPanel Grid.Row="3" Grid.Column="1">
-            <TextBox Text="{Binding Fee}" Margin="5" Width="50" />
+        <TextBlock Grid.Row="1" Text="Sender account" Margin="5" FontWeight="Regular" />
+        <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2">
+            <ComboBox Margin="5" ItemsSource="{Binding Accounts}" SelectedValue="{Binding SenderAccount}" HorizontalAlignment="Left" Width="150" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Margin="0,0,5,0" Text="{Binding Path=AccountNumber}"/>
+                            <TextBlock Text="{Binding Path=Name}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Text="Account from your wallet" Margin="5" FontWeight="Thin" />
+        </DockPanel>
+
+        <TextBlock Grid.Row="2" Margin="5" Text="Receiver account" FontWeight="Regular" />
+        <DockPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2">
+            <TextBox Margin="5" Text="{Binding ReceiverAccount}" HorizontalAlignment="Left" Width="150" />
+            <TextBlock Text="Account number - message receiver" Margin="5" FontWeight="Thin" />
+        </DockPanel>
+
+        <TextBlock Grid.Row="3" Text="Signer account" Margin="5" FontWeight="Regular" />
+        <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2">
+            <ComboBox Margin="5" ItemsSource="{Binding AccountsWithPasc}" SelectedValue="{Binding SignerAccount}" HorizontalAlignment="Left" Width="150">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Path=AccountNumber}"/>
+                            <TextBlock Margin="5,0" Text="{Binding Path=Name}"/>
+                            <TextBlock Text="{Binding Path=Balance}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Text="Signer pays the operation fee - should have the same public key as sender. Do not set signer, it is buggy." Margin="5" FontWeight="Thin" />
+        </DockPanel>
+        
+        <TextBlock Grid.Row="4" Margin="5" Text="Fee" FontWeight="Regular" />
+        <DockPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3">
+            <TextBox Text="{Binding Fee}" Margin="5" Width="150" />
             <Slider Value="{Binding Fee}" Minimum="0" VerticalAlignment="Center"  TickPlacement="BottomRight" TickFrequency="0.0001" IsSnapToTickEnabled="True" Maximum="0.001" />
         </DockPanel>
 
-        <TextBlock Grid.Row="4" Margin="5" Text="Identifier" />
-        <TextBox Grid.Row="4" Grid.Column="1" Margin="5" Text="{Binding Identifier}" />
-        <TextBlock Grid.Row="5" Margin="5" Text="Message" />
-        <TextBox Grid.Row="5" Grid.Column="1" Margin="5" Text="{Binding Message}" />
+        <TextBlock Grid.Row="5" Margin="5" Text="Identifier" FontWeight="Regular" />
+        <DockPanel Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2">
+            <TextBox Margin="5" Grid.ColumnSpan="2" Text="{Binding Identifier}" Width="250" />
+            <Button Width="100" Margin="5" Content="Generate new" Command="{Binding GenerateGuidCommand}" />
+            <TextBlock Text="Useful to group message parts when Sequence is used" Margin="5" FontWeight="Thin" />
+        </DockPanel>
+        
+        
+        
+        
+        <TextBlock Grid.Row="6" Margin="5" Text="Message" FontWeight="Regular" />
+        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" Margin="5" Text="{Binding Message}" />
 
 
 
-        <Button Grid.Row="6" Grid.ColumnSpan="2" Content="Send" HorizontalAlignment="Center" Padding="10,0" Command="{Binding SendCommand}" />
+        <Button Grid.Row="7" Grid.Column="1" Content="Send" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
 
-        <ContentControl Grid.RowSpan="8" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
+        <ContentControl Grid.RowSpan="8" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
     </Grid>
 </UserControl>
