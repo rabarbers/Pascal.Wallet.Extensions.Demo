@@ -77,6 +77,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             set
             {
                 _accounts = value;
+                SenderAccount = null;
                 OnPropertyChanged(nameof(Accounts));
             }
         }
