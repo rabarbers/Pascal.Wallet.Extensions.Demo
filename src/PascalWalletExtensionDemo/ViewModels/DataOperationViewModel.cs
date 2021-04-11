@@ -20,50 +20,22 @@ namespace PascalWalletExtensionDemo.ViewModels
         private string _message;
         private List<Account> _accounts;
         private List<Account> _accountsWithPasc;
+        private bool _refreshing;
 
         public DataOperationViewModel(IConnectorHolder connectorHolder)
         {
             _holder = connectorHolder;
             ReceiverAccount = 834853;
             GenerateGuid();
+            LoadAccounts(); //TODO: this needs to be refactored into async method
 
-            //this should be created on the UI thread
-            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections. Then recconnect in connection view.", () => InfoMessage = null, true);
-
-            var accountsLoaded = false;
-            var timer = new DispatcherTimer();
-            timer.Tick += TimerTick;
-            timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
-            timer.Start();
-            void TimerTick(object sender, EventArgs e)
-            {
-                timer.Stop();
-                timer.Tick -= TimerTick;
-                if (!accountsLoaded)
-                {
-                    InfoMessage = new InfoMessageViewModel("Loading accounts...", null);
-                }
-            }
-
-            _holder.Connector.GetWalletAccountsAsync(max: 1000).ContinueWith(task => {
-                accountsLoaded = true;
-                if (task.Result.Result != null)
-                {
-                    Accounts = task.Result.Result.OrderBy(n => n.AccountNumber).ToList();
-                    InfoMessage = null;
-                }
-                else
-                {
-                    InfoMessage = errorInfo;
-                }
-            }).ConfigureAwait(false);
-
-            SendCommand = new RelayCommandAsync(SendDataOperation, parameter => CanSend());
+            SendCommand = new RelayCommandAsync(SendDataOperationAsync, parameter => CanSend());
             ClearCommand = new RelayCommand(Clear);
             GenerateGuidCommand = new RelayCommand(GenerateGuid);
+            RefreshCommand = new RelayCommand(LoadAccounts, parameter => CanRefresh());
         }
 
-        public async Task SendDataOperation()
+        public async Task SendDataOperationAsync()
         {
             var sendingDataResponse = await _holder.Connector.SendDataAsync(SenderAccount.AccountNumber, ReceiverAccount, Identifier, SignerAccount?.AccountNumber, DataType.ChatMessage, 0, 0, Fee, Message);
             if (sendingDataResponse.Result != null)
@@ -180,6 +152,7 @@ namespace PascalWalletExtensionDemo.ViewModels
 
         public ICommand SendCommand { get; private set; }
         public ICommand ClearCommand { get; private set; }
+        public ICommand RefreshCommand { get; private set; }
         public ICommand GenerateGuidCommand { get; private set; }
 
         private void GenerateGuid()
@@ -194,6 +167,49 @@ namespace PascalWalletExtensionDemo.ViewModels
             SenderAccount = null;
             Message = null;
             Fee = 0;
+        }
+
+        private void LoadAccounts()
+        {
+            _refreshing = true;
+
+            //this should be created on the UI thread
+            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections. Then recconnect in connection view.", () => InfoMessage = null, true);
+
+            var accountsLoaded = false;
+
+            var timer = new DispatcherTimer();
+            timer.Tick += TimerTick;
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
+            timer.Start();
+            void TimerTick(object sender, EventArgs e)
+            {
+                timer.Stop();
+                timer.Tick -= TimerTick;
+                if (!accountsLoaded)
+                {
+                    InfoMessage = new InfoMessageViewModel("Loading accounts...", null);
+                }
+            }
+
+            _holder.Connector.GetWalletAccountsAsync(max: 1000).ContinueWith(task => {
+                accountsLoaded = true;
+                if (task.Result.Result != null)
+                {
+                    Accounts = task.Result.Result.OrderBy(n => n.AccountNumber).ToList();
+                    InfoMessage = null;
+                }
+                else
+                {
+                    InfoMessage = errorInfo;
+                }
+                _refreshing = false;
+            });
+        }
+
+        private bool CanRefresh()
+        {
+            return !_refreshing;
         }
 
         private bool CanSend()

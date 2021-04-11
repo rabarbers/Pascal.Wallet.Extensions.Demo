@@ -87,8 +87,12 @@
         <TextBlock Grid.Row="6" Margin="5" Text="Message" FontWeight="Regular" />
         <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" Margin="5" Text="{Binding Message, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" />
 
-        <Button Grid.Row="7" Grid.Column="1" Content="Send" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
-        <Button Grid.Row="7" Grid.Column="2" Content="Clear fields" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding ClearCommand}" />
+        <StackPanel Grid.Row="7" Grid.Column="1"  Orientation="Horizontal">
+            <Button Content="Send" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
+            <Button Content="Clear fields" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding ClearCommand}" />
+            <Button Content="Refresh accounts list" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+        
 
         <ContentControl Grid.RowSpan="8" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
     </Grid>
