@@ -59,6 +59,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             }).ConfigureAwait(false);
 
             SendCommand = new RelayCommandAsync(SendDataOperation, parameter => CanSend());
+            ClearCommand = new RelayCommand(Clear);
             GenerateGuidCommand = new RelayCommand(GenerateGuid);
         }
 
@@ -178,11 +179,21 @@ namespace PascalWalletExtensionDemo.ViewModels
         }
 
         public ICommand SendCommand { get; private set; }
+        public ICommand ClearCommand { get; private set; }
         public ICommand GenerateGuidCommand { get; private set; }
 
         private void GenerateGuid()
         {
             Identifier = Guid.NewGuid().ToString().ToUpper();
+        }
+
+        private void Clear()
+        {
+            ReceiverAccount = 834853;
+            SignerAccount = null;
+            SenderAccount = null;
+            Message = null;
+            Fee = 0;
         }
 
         private bool CanSend()

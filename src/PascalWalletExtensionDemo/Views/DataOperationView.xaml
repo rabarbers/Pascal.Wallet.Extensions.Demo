@@ -73,7 +73,7 @@
         
         <TextBlock Grid.Row="4" Margin="5" Text="Fee" FontWeight="Regular" />
         <DockPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3">
-            <TextBox Text="{Binding Fee}" Margin="5" Width="150" />
+            <TextBox Text="{Binding Fee}" Margin="5" Width="150" IsReadOnly="True" />
             <Slider Value="{Binding Fee}" Minimum="0" VerticalAlignment="Center"  TickPlacement="BottomRight" TickFrequency="0.0001" IsSnapToTickEnabled="True" Maximum="0.001" />
         </DockPanel>
 
@@ -93,6 +93,7 @@
 
 
         <Button Grid.Row="7" Grid.Column="1" Content="Send" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
+        <Button Grid.Row="7" Grid.Column="2" Content="Clear fields" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding ClearCommand}" />
 
         <ContentControl Grid.RowSpan="8" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
     </Grid>
