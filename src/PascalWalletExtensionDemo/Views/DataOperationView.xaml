@@ -9,6 +9,7 @@
              d:DesignHeight="450" d:DesignWidth="850">
     <UserControl.Resources>
         <ResourceDictionary>
+            <Views:EnumMatchConverter x:Key="enumConverter" />
             <DataTemplate DataType="{x:Type ViewModels:InfoMessageViewModel}">
                 <Views:InfoMessageView />
             </DataTemplate>
@@ -29,6 +30,8 @@
             <RowDefinition Height="30" />
             <RowDefinition Height="30" />
             <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -36,7 +39,7 @@
 
         <TextBlock Grid.Row="1" Text="Sender account" Margin="5" FontWeight="Regular" />
         <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2">
-            <ComboBox Margin="5" ItemsSource="{Binding Accounts}" SelectedValue="{Binding SenderAccount}" HorizontalAlignment="Left" Width="150" >
+            <ComboBox Margin="5,3" ItemsSource="{Binding Accounts}" SelectedValue="{Binding SenderAccount}" HorizontalAlignment="Left" Width="150" >
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -57,7 +60,7 @@
 
         <TextBlock Grid.Row="3" Text="Signer account" Margin="5" FontWeight="Regular" />
         <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2">
-            <ComboBox Margin="5" ItemsSource="{Binding AccountsWithPasc}" SelectedValue="{Binding SignerAccount}" HorizontalAlignment="Left" Width="150">
+            <ComboBox Margin="5,3" ItemsSource="{Binding AccountsWithPasc}" SelectedValue="{Binding SignerAccount}" HorizontalAlignment="Left" Width="150">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -68,32 +71,46 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
-            <TextBlock Text="Signer pays the operation fee - should have the same public key as sender. Do not set signer, it is buggy." Margin="5" FontWeight="Thin" />
+            <TextBlock Text="Signer pays the operation fee - should have the same public key as sender" Margin="5" FontWeight="Thin" />
         </DockPanel>
-        
-        <TextBlock Grid.Row="4" Margin="5" Text="Fee" FontWeight="Regular" />
-        <DockPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3">
+
+        <TextBlock Grid.Row="4" Margin="5" Text="Amount" FontWeight="Regular" />
+        <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal">
+            <TextBox Text="{Binding Amount}" Margin="5" Width="150" />
+            <TextBlock Text="Amount is optional field for data operations" Margin="5" FontWeight="Thin" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="5" Margin="5" Text="Fee" FontWeight="Regular" />
+        <DockPanel Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3">
             <TextBox Text="{Binding Fee}" Margin="5" Width="150" IsReadOnly="True" />
             <Slider Value="{Binding Fee}" Minimum="0" VerticalAlignment="Center"  TickPlacement="BottomRight" TickFrequency="0.0001" IsSnapToTickEnabled="True" Maximum="0.001" />
         </DockPanel>
 
-        <TextBlock Grid.Row="5" Margin="5" Text="Identifier" FontWeight="Regular" />
-        <DockPanel Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2">
+        <TextBlock Grid.Row="6" Margin="5" Text="Identifier" FontWeight="Regular" />
+        <DockPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2">
             <TextBox Margin="5" Grid.ColumnSpan="2" Text="{Binding Identifier, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" Width="250" />
             <Button Width="100" Margin="5" Content="Generate new" Command="{Binding GenerateGuidCommand}" />
             <TextBlock Text="Useful to group message parts when Sequence is used" Margin="5" FontWeight="Thin" />
         </DockPanel>
 
-        <TextBlock Grid.Row="6" Margin="5" Text="Message" FontWeight="Regular" />
-        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" Margin="5" Text="{Binding Message, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock Grid.Row="7" Margin="5" Text="Message" FontWeight="Regular" />
+        <TextBox Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3" Margin="5" Text="{Binding Message, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" />
 
-        <StackPanel Grid.Row="7" Grid.Column="1"  Orientation="Horizontal">
+        <TextBlock Grid.Row="8" Text="Encryption" Margin="5" FontWeight="Regular" />
+        <StackPanel Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal">
+            <ComboBox Margin="5,3" ItemsSource="{Binding EncryptionMethods}" SelectedValue="{Binding SelectedEncryptionMethod}" DisplayMemberPath="Name" HorizontalAlignment="Left" Width="150" />
+            <StackPanel Orientation="Horizontal" Visibility="{Binding SelectedEncryptionMethod.Method, Converter={StaticResource enumConverter}, ConverterParameter=Aes}">
+                <TextBlock Text="Password" Margin="5" FontWeight="Thin" />
+                <TextBox Text="{Binding Password}" Margin="5" Width="150" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="9" Grid.Column="1"  Orientation="Horizontal">
             <Button Content="Send" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
             <Button Content="Clear fields" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding ClearCommand}" />
             <Button Content="Refresh accounts list" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding RefreshCommand}" />
         </StackPanel>
-        
 
-        <ContentControl Grid.RowSpan="8" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
+        <ContentControl Grid.RowSpan="10" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
     </Grid>
 </UserControl>

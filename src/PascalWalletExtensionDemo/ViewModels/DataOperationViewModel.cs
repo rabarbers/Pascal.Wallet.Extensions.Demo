@@ -1,4 +1,5 @@
 ﻿using Pascal.Wallet.Connector.DTO;
+using PascalWalletExtensionDemo.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,32 +16,46 @@ namespace PascalWalletExtensionDemo.ViewModels
         private Account _senderAccount;
         private Account _signerAccount;
         private uint _receiverAccount;
+        private decimal _amount;
         private decimal _fee;
         private string _identifier;
         private string _message;
         private List<Account> _accounts;
         private List<Account> _accountsWithPasc;
+        private List<EncryptionMethod> _encryptionMethods;
+        private string _password;
+        private EncryptionMethod _selectedEncryptionMethod;
         private bool _refreshing;
 
         public DataOperationViewModel(IConnectorHolder connectorHolder)
         {
             _holder = connectorHolder;
-            ReceiverAccount = 834853;
-            GenerateGuid();
             LoadAccounts(); //TODO: this needs to be refactored into async method
 
+            EncryptionMethods = new List<EncryptionMethod>
+            {
+                new EncryptionMethod("None (publicly visible)", PayloadMethod.None),
+                new EncryptionMethod("Receiver's public key (only receiver can read)", PayloadMethod.Dest),
+                new EncryptionMethod("Sender's public key (only sender can read)", PayloadMethod.Sender),
+                new EncryptionMethod("AES encryption (need password to read)", PayloadMethod.Aes)
+            };
+
+            GenerateGuid();
+            SetDefaults();
+
             SendCommand = new RelayCommandAsync(SendDataOperationAsync, parameter => CanSend());
-            ClearCommand = new RelayCommand(Clear);
+            ClearCommand = new RelayCommand(SetDefaults);
             GenerateGuidCommand = new RelayCommand(GenerateGuid);
             RefreshCommand = new RelayCommand(LoadAccounts, parameter => CanRefresh());
         }
 
         public async Task SendDataOperationAsync()
         {
-            var sendingDataResponse = await _holder.Connector.SendDataAsync(SenderAccount.AccountNumber, ReceiverAccount, Identifier, SignerAccount?.AccountNumber, DataType.ChatMessage, 0, 0, Fee, Message);
+            var sendingDataResponse = await _holder.Connector.SendDataAsync(SenderAccount.AccountNumber, ReceiverAccount, Identifier, SignerAccount?.AccountNumber,
+                DataType.ChatMessage, 0, Amount, Fee, Message, SelectedEncryptionMethod.Method, Password);
             if (sendingDataResponse.Result != null)
             {
-                InfoMessage = new InfoMessageViewModel($"DataOperation sent successfully.", () => InfoMessage = null);
+                InfoMessage = new InfoMessageViewModel($"DataOperation sent successfully.", () => { SetDefaults(); InfoMessage = null; });
             }
             else
             {
@@ -82,6 +97,36 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
+        public List<EncryptionMethod> EncryptionMethods
+        {
+            get { return _encryptionMethods; }
+            set
+            {
+                _encryptionMethods = value;
+                OnPropertyChanged(nameof(EncryptionMethods));
+            }
+        }
+
+        public EncryptionMethod SelectedEncryptionMethod
+        {
+            get { return _selectedEncryptionMethod; }
+            set
+            {
+                _selectedEncryptionMethod = value;
+                OnPropertyChanged(nameof(SelectedEncryptionMethod));
+            }
+        }
+
+        public string Password
+        {
+            get { return _password; }
+            set
+            {
+                _password = value;
+                OnPropertyChanged(nameof(Password));
+            }
+        }
+
         public Account SenderAccount
         {
             get { return _senderAccount; }
@@ -118,6 +163,16 @@ namespace PascalWalletExtensionDemo.ViewModels
             {
                 _receiverAccount = value;
                 OnPropertyChanged(nameof(ReceiverAccount));
+            }
+        }
+
+        public decimal Amount
+        {
+            get { return _amount; }
+            set
+            {
+                _amount = value;
+                OnPropertyChanged(nameof(Amount));
             }
         }
 
@@ -161,13 +216,16 @@ namespace PascalWalletExtensionDemo.ViewModels
             Identifier = Guid.NewGuid().ToString().ToUpper();
         }
 
-        private void Clear()
+        private void SetDefaults()
         {
             ReceiverAccount = 834853;
             SignerAccount = null;
             SenderAccount = null;
             Message = null;
             Fee = 0;
+            Amount = 0;
+            SelectedEncryptionMethod = EncryptionMethods[0];
+            Password = null;
         }
 
         private void LoadAccounts()
