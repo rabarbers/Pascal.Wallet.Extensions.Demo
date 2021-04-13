@@ -31,11 +31,12 @@
             <RowDefinition Height="30" />
             <RowDefinition Height="30" />
             <RowDefinition Height="30" />
+            <RowDefinition Height="60" />
             <RowDefinition Height="30" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.ColumnSpan="4" FontSize="16" FontWeight="DemiBold" Margin="0,5,0,0" Text="Create chat message on Pascal coin blockchain" HorizontalAlignment="Center" />
+        <TextBlock Grid.ColumnSpan="4" FontSize="16" FontWeight="DemiBold" Margin="0,5,0,0" Text="Create chat message on the Pascal coin blockchain" HorizontalAlignment="Center" />
 
         <TextBlock Grid.Row="1" Text="Sender account" Margin="5" FontWeight="Regular" />
         <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2">
@@ -77,40 +78,45 @@
         <TextBlock Grid.Row="4" Margin="5" Text="Amount" FontWeight="Regular" />
         <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal">
             <TextBox Text="{Binding Amount}" Margin="5" Width="150" />
-            <TextBlock Text="Amount is optional field for data operations" Margin="5" FontWeight="Thin" />
+            <TextBlock Text="Amount is optional field for data operations and it will be included in the first message part" Margin="5" FontWeight="Thin" />
         </StackPanel>
 
         <TextBlock Grid.Row="5" Margin="5" Text="Fee" FontWeight="Regular" />
         <DockPanel Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3">
             <TextBox Text="{Binding Fee}" Margin="5" Width="150" IsReadOnly="True" />
-            <Slider Value="{Binding Fee}" Minimum="0" VerticalAlignment="Center"  TickPlacement="BottomRight" TickFrequency="0.0001" IsSnapToTickEnabled="True" Maximum="0.001" />
+            <CheckBox IsChecked="{Binding AlwaysAddFee}" Margin="5" Content="Always add fee" />
+            <TextBlock Text="There is only 1 free message (~255 symbols) per account per block (~every 5 minutes)." Margin="5" FontWeight="Thin" />
         </DockPanel>
 
-        <TextBlock Grid.Row="6" Margin="5" Text="Identifier" FontWeight="Regular" />
-        <DockPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2">
-            <TextBox Margin="5" Grid.ColumnSpan="2" Text="{Binding Identifier, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" Width="250" />
-            <Button Width="100" Margin="5" Content="Generate new" Command="{Binding GenerateGuidCommand}" />
-            <TextBlock Text="Useful to group message parts when Sequence is used" Margin="5" FontWeight="Thin" />
-        </DockPanel>
+        <TextBlock Grid.Row="6" Margin="5" Text="Message" FontWeight="Regular" />
+        <StackPanel Grid.Row="7" Margin="5,0,0,0" Orientation="Horizontal">
+            <TextBlock Margin="5" FontWeight="Thin" Text="{Binding MessageLength}" d:Text="16" />
+            <TextBlock Margin="0,5,5,5" FontWeight="Thin" Text="/" />
+            <TextBlock Margin="0,5" Text="{Binding MaxLength}" FontWeight="Thin" d:Text="255" />
+        </StackPanel>
+        <StackPanel Grid.Row="8" Margin="5,0,0,0" Orientation="Horizontal">
+            <TextBlock Margin="5" Text="Parts" FontWeight="Thin" />
+            <TextBlock Margin="0,5" Text="{Binding PartCount}" FontWeight="Thin" d:Text="1" />
+        </StackPanel>
+        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" Grid.RowSpan="3" Margin="5" Text="{Binding Message, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}"
+                 TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" d:Text="This is message!" />
 
-        <TextBlock Grid.Row="7" Margin="5" Text="Message" FontWeight="Regular" />
-        <TextBox Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3" Margin="5" Text="{Binding Message, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" />
-
-        <TextBlock Grid.Row="8" Text="Encryption" Margin="5" FontWeight="Regular" />
-        <StackPanel Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal">
+        <TextBlock Grid.Row="9" Text="Encryption" Margin="5" FontWeight="Regular" />
+        <StackPanel Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal">
             <ComboBox Margin="5,3" ItemsSource="{Binding EncryptionMethods}" SelectedValue="{Binding SelectedEncryptionMethod}" DisplayMemberPath="Name" HorizontalAlignment="Left" Width="150" />
             <StackPanel Orientation="Horizontal" Visibility="{Binding SelectedEncryptionMethod.Method, Converter={StaticResource enumConverter}, ConverterParameter=Aes}">
                 <TextBlock Text="Password" Margin="5" FontWeight="Thin" />
                 <TextBox Text="{Binding Password}" Margin="5" Width="150" />
             </StackPanel>
+            <TextBlock Margin="5" Text="{Binding SelectedEncryptionMethod.Description}" FontWeight="Thin" d:Text="Need a password to read" />
         </StackPanel>
 
-        <StackPanel Grid.Row="9" Grid.Column="1"  Orientation="Horizontal">
-            <Button Content="Send" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
+        <StackPanel Grid.Row="10" Grid.Column="1"  Orientation="Horizontal">
+            <Button Content="Send message" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding SendCommand}" />
             <Button Content="Clear fields" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding ClearCommand}" />
             <Button Content="Refresh accounts list" HorizontalAlignment="Left" Margin="5" Width="150" VerticalAlignment="Top" Height="30" Padding="10,0" Command="{Binding RefreshCommand}" />
         </StackPanel>
 
-        <ContentControl Grid.RowSpan="10" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
+        <ContentControl Grid.RowSpan="11" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding InfoMessage}" />
     </Grid>
 </UserControl>

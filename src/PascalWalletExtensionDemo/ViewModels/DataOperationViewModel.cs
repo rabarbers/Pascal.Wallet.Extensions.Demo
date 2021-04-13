@@ -11,57 +11,43 @@ namespace PascalWalletExtensionDemo.ViewModels
 {
     public class DataOperationViewModel: ViewModelBase
     {
-        private IConnectorHolder _holder;
+        private const decimal MinFee = 0.0001M;
+        
+        private readonly IConnectorHolder _holder;
         private InfoMessageViewModel _infoMessage;
         private Account _senderAccount;
         private Account _signerAccount;
         private uint _receiverAccount;
         private decimal _amount;
         private decimal _fee;
-        private string _identifier;
+        private bool _alwaysAddFee;
         private string _message;
+        private string _guid;
+        private int _maxLength;
+        private int _messageLength;
+        private int _partCount;
         private List<Account> _accounts;
         private List<Account> _accountsWithPasc;
-        private List<EncryptionMethod> _encryptionMethods;
+        private IList<EncryptionMethod> _encryptionMethods;
         private string _password;
         private EncryptionMethod _selectedEncryptionMethod;
-        private bool _refreshing;
+        private bool _initialized;
 
         public DataOperationViewModel(IConnectorHolder connectorHolder)
         {
             _holder = connectorHolder;
-            LoadAccounts(); //TODO: this needs to be refactored into async method
-
-            EncryptionMethods = new List<EncryptionMethod>
-            {
-                new EncryptionMethod("None (publicly visible)", PayloadMethod.None),
-                new EncryptionMethod("Receiver's public key (only receiver can read)", PayloadMethod.Dest),
-                new EncryptionMethod("Sender's public key (only sender can read)", PayloadMethod.Sender),
-                new EncryptionMethod("AES encryption (need password to read)", PayloadMethod.Aes)
-            };
-
-            GenerateGuid();
+            EncryptionMethods = EncryptionMethod.GetSupportedMethods();
             SetDefaults();
 
-            SendCommand = new RelayCommandAsync(SendDataOperationAsync, parameter => CanSend());
             ClearCommand = new RelayCommand(SetDefaults);
-            GenerateGuidCommand = new RelayCommand(GenerateGuid);
-            RefreshCommand = new RelayCommand(LoadAccounts, parameter => CanRefresh());
+            RefreshCommand = new RelayCommandAsync(InitializeAsync, parameter => CanRefresh());
+            SendCommand = new RelayCommandAsync(SendDataOperationAsync, parameter => CanSend());
         }
 
-        public async Task SendDataOperationAsync()
-        {
-            var sendingDataResponse = await _holder.Connector.SendDataAsync(SenderAccount.AccountNumber, ReceiverAccount, Identifier, SignerAccount?.AccountNumber,
-                DataType.ChatMessage, 0, Amount, Fee, Message, SelectedEncryptionMethod.Method, Password);
-            if (sendingDataResponse.Result != null)
-            {
-                InfoMessage = new InfoMessageViewModel($"DataOperation sent successfully.", () => { SetDefaults(); InfoMessage = null; });
-            }
-            else
-            {
-                InfoMessage = new InfoMessageViewModel(sendingDataResponse.Error.Message, () => InfoMessage = null, true);
-            }
-        }
+        public ICommand SendCommand { get; private set; }
+        public ICommand ClearCommand { get; private set; }
+        public ICommand RefreshCommand { get; private set; }
+        public ICommand GenerateGuidCommand { get; private set; }
 
         public InfoMessageViewModel InfoMessage
         {
@@ -97,7 +83,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
-        public List<EncryptionMethod> EncryptionMethods
+        public IList<EncryptionMethod> EncryptionMethods
         {
             get { return _encryptionMethods; }
             set
@@ -112,6 +98,41 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _selectedEncryptionMethod; }
             set
             {
+                if(_selectedEncryptionMethod == value)
+                {
+                    return;
+                }
+                switch (value.Method)
+                {
+                    case PayloadMethod.Sender:
+                        MaxLength = GetMessageLength(SenderAccount?.EncodedPublicKey);
+                        break;
+                    case PayloadMethod.Dest:
+                        var timer = new DispatcherTimer();
+                        timer.Tick += TimerTick;
+                        timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
+                        timer.Start();
+                        void TimerTick(object sender, EventArgs e)
+                        {
+                            timer.Stop();
+                            timer.Tick -= TimerTick;
+                            if (!_initialized)
+                            {
+                                InfoMessage = new InfoMessageViewModel("Retrieving receiver's public key...", null);
+                            }
+                        }
+
+                        var error = new InfoMessageViewModel("Failed to retrieve receiver's public key!", () => InfoMessage = null, true);
+                        _holder.Connector.GetAccountAsync(ReceiverAccount).ContinueWith(task =>
+                        {
+                            MaxLength = GetMessageLength(task.Result?.Result?.EncodedPublicKey);
+                            InfoMessage = task.Result.Result == null ? error : null;
+                        });
+                        break;
+                    default:
+                        MaxLength = EncryptionMethod.GetMaxMessageLength(value.Method);
+                        break;
+                }
                 _selectedEncryptionMethod = value;
                 OnPropertyChanged(nameof(SelectedEncryptionMethod));
             }
@@ -122,8 +143,11 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _password; }
             set
             {
-                _password = value;
-                OnPropertyChanged(nameof(Password));
+                if(_password != value)
+                {
+                    _password = value;
+                    OnPropertyChanged(nameof(Password));
+                }
             }
         }
 
@@ -132,17 +156,16 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _senderAccount; }
             set
             {
-                if(value != null)
+                if(_senderAccount != value)
                 {
-                    AccountsWithPasc = Accounts.Where(n => n.EncodedPublicKey == value.EncodedPublicKey).ToList();
+                    if (SelectedEncryptionMethod?.Method == PayloadMethod.Sender)
+                    {
+                        MaxLength = GetMessageLength(value.EncodedPublicKey);
+                    }
+                    AccountsWithPasc = value != null ? Accounts.Where(n => n.EncodedPublicKey == value.EncodedPublicKey).ToList() : new List<Account>();
+                    _senderAccount = value;
+                    OnPropertyChanged(nameof(SenderAccount));
                 }
-                else
-                {
-                    AccountsWithPasc = new List<Account>();
-                }
-
-                _senderAccount = value;
-                OnPropertyChanged(nameof(SenderAccount));
             }
         }
 
@@ -151,8 +174,11 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _signerAccount; }
             set
             {
-                _signerAccount = value;
-                OnPropertyChanged(nameof(SignerAccount));
+                if(_signerAccount != value)
+                {
+                    _signerAccount = value;
+                    OnPropertyChanged(nameof(SignerAccount));
+                }
             }
         }
 
@@ -161,6 +187,40 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _receiverAccount; }
             set
             {
+                if (_receiverAccount == value)
+                {
+                    return;
+                }
+                if (SelectedEncryptionMethod?.Method == PayloadMethod.Dest)
+                {
+                    var timer = new DispatcherTimer();
+                    timer.Tick += TimerTick;
+                    timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
+                    timer.Start();
+                    void TimerTick(object sender, EventArgs e)
+                    {
+                        timer.Stop();
+                        timer.Tick -= TimerTick;
+                        if (!_initialized)
+                        {
+                            InfoMessage = new InfoMessageViewModel("Retrieving receiver's public key...", null);
+                        }
+                    }
+
+                    _holder.Connector.GetAccountAsync(value).ContinueWith(task =>
+                    {
+                        if (task.Result.Result != null)
+                        {
+                            MaxLength = GetMessageLength(task.Result.Result.EncodedPublicKey);
+                            InfoMessage = null;
+                        }
+                        else
+                        {
+                            InfoMessage = new InfoMessageViewModel("Failed to retrieve receiver's public key!", () => InfoMessage = null, true);
+                        }
+                    });
+                }
+
                 _receiverAccount = value;
                 OnPropertyChanged(nameof(ReceiverAccount));
             }
@@ -171,8 +231,11 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _amount; }
             set
             {
-                _amount = value;
-                OnPropertyChanged(nameof(Amount));
+                if(_amount != value)
+                {
+                    _amount = value;
+                    OnPropertyChanged(nameof(Amount));
+                }
             }
         }
 
@@ -181,18 +244,28 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _fee; }
             set
             {
-                _fee = value;
-                OnPropertyChanged(nameof(Fee));
+                if(_fee != value)
+                {
+                    _fee = value;
+                    OnPropertyChanged(nameof(Fee));
+                }
             }
         }
 
-        public string Identifier
+        public bool AlwaysAddFee
         {
-            get { return _identifier; }
+            get { return _alwaysAddFee; }
             set
             {
-                _identifier = value;
-                OnPropertyChanged(nameof(Identifier));
+                if (_alwaysAddFee != value)
+                {
+                    _alwaysAddFee = value;
+                    OnPropertyChanged(nameof(AlwaysAddFee));
+                    if (PartCount == 1)
+                    {
+                        Fee = value ? MinFee : 0;
+                    }
+                }
             }
         }
 
@@ -201,41 +274,60 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _message; }
             set
             {
-                _message = value;
-                OnPropertyChanged(nameof(Message));
+                if(_message != value)
+                {
+                    _message = value;
+                    OnPropertyChanged(nameof(Message));
+                    MessageLength = value == null ? 0 : value.Length;
+                }
             }
         }
 
-        public ICommand SendCommand { get; private set; }
-        public ICommand ClearCommand { get; private set; }
-        public ICommand RefreshCommand { get; private set; }
-        public ICommand GenerateGuidCommand { get; private set; }
-
-        private void GenerateGuid()
+        public int MaxLength
         {
-            Identifier = Guid.NewGuid().ToString().ToUpper();
+            get { return _maxLength; }
+            set
+            {
+                if(_maxLength != value)
+                {
+                    _maxLength = value;
+                    OnPropertyChanged(nameof(MaxLength));
+                    PartCount = MessageLength > 0 ? (int)Math.Ceiling((double)MessageLength / MaxLength) : 1;
+                }
+            }
         }
 
-        private void SetDefaults()
+        public int MessageLength
         {
-            ReceiverAccount = 834853;
-            SignerAccount = null;
-            SenderAccount = null;
-            Message = null;
-            Fee = 0;
-            Amount = 0;
-            SelectedEncryptionMethod = EncryptionMethods[0];
-            Password = null;
+            get { return _messageLength; }
+            set
+            {
+                if(_messageLength != value)
+                {
+                    _messageLength = value;
+                    OnPropertyChanged(nameof(MessageLength));
+                    PartCount = MessageLength > 0 ? (int)Math.Ceiling((double)MessageLength / MaxLength) : 1;
+                }
+            }
         }
 
-        private void LoadAccounts()
+        public int PartCount
         {
-            _refreshing = true;
+            get { return _partCount; }
+            set
+            {
+                if(_partCount != value)
+                {
+                    _partCount = value;
+                    OnPropertyChanged(nameof(PartCount));
+                    Fee = value > 1 ? MinFee * value : (AlwaysAddFee ? MinFee : 0);
+                }
+            }
+        }
 
-            //this should be created on the UI thread
-            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections. Then recconnect in connection view.", () => InfoMessage = null, true);
-
-            var accountsLoaded = false;
+        public async Task InitializeAsync()
+        {
+            _initialized = false;
 
             var timer = new DispatcherTimer();
             timer.Tick += TimerTick;
@@ -245,35 +337,87 @@ namespace PascalWalletExtensionDemo.ViewModels
             {
                 timer.Stop();
                 timer.Tick -= TimerTick;
-                if (!accountsLoaded)
+                if (!_initialized)
                 {
                     InfoMessage = new InfoMessageViewModel("Loading accounts...", null);
                 }
             }
 
-            _holder.Connector.GetWalletAccountsAsync(max: 1000).ContinueWith(task => {
-                accountsLoaded = true;
-                if (task.Result.Result != null)
+            var accountsResponse = await _holder.Connector.GetWalletAccountsAsync(max: 500);
+            if (accountsResponse.Result != null)
+            {
+                Accounts = accountsResponse.Result.OrderBy(n => n.AccountNumber).ToList();
+                InfoMessage = null;
+            }
+            else
+            {
+                InfoMessage = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+            }
+            _initialized = true;
+        }
+
+        private async Task SendDataOperationAsync()
+        {
+            string errorMessage = null;
+            for (var i = 0; i < PartCount; i++)
+            {
+                string messagePart = i < PartCount - 1 ? Message.Substring(i * MaxLength, MaxLength) : Message.Substring(i * MaxLength);
+
+                var sendingDataResponse = await _holder.Connector.SendDataAsync(SenderAccount.AccountNumber, ReceiverAccount, _guid, SignerAccount?.AccountNumber,
+                    DataType.ChatMessage, (uint)i, i == 0 ? Amount : 0, Fee / PartCount, messagePart, SelectedEncryptionMethod.Method, Password);
+                if (errorMessage == null)
                 {
-                    Accounts = task.Result.Result.OrderBy(n => n.AccountNumber).ToList();
-                    InfoMessage = null;
+                    errorMessage = sendingDataResponse.Error?.Message;
                 }
-                else
-                {
-                    InfoMessage = errorInfo;
-                }
-                _refreshing = false;
-            });
+            }
+            if (errorMessage == null)
+            {
+                var manyMessagesText = PartCount > 1 ? $"consisting of {PartCount} parts " : "";
+                InfoMessage = new InfoMessageViewModel($"Message {manyMessagesText}sent successfully.", () => { SetDefaults(); InfoMessage = null; });
+            }
+            else
+            {
+                InfoMessage = new InfoMessageViewModel(errorMessage, () => InfoMessage = null, true);
+            }
+        }
+
+        private void SetDefaults()
+        {
+            _guid = Guid.NewGuid().ToString().ToUpper();
+            SelectedEncryptionMethod = EncryptionMethods[0];
+            ReceiverAccount = Properties.Settings.Default.DefaultReceiver;
+            SignerAccount = null;
+            SenderAccount = null;
+            Message = null;
+            Fee = 0;
+            Amount = 0;
+            MaxLength = 255;
+            MessageLength = 0;
+            PartCount = 1;
+            Password = null;
         }
 
         private bool CanRefresh()
         {
-            return !_refreshing;
+            return _initialized;
         }
 
         private bool CanSend()
         {
             return SenderAccount != null;
+        }
+
+        private static int GetMessageLength(string encodedPublicKey)
+        {
+            var encodedKeySize = encodedPublicKey?.Length ?? 0;
+            return encodedKeySize switch
+            {
+                140 => 191,
+                156 => 191,
+                204 => 175,
+                276 => 159,
+                _ => 159, //if public key size not known, then assume the worst case scenario
+            };
         }
     }
 }

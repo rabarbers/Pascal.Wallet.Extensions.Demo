@@ -46,5 +46,17 @@ namespace PascalWalletExtensionDemo.Properties {
                 this["WalletPort"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("834853")]
+        public uint DefaultReceiver {
+            get {
+                return ((uint)(this["DefaultReceiver"]));
+            }
+            set {
+                this["DefaultReceiver"] = value;
+            }
+        }
     }
 }

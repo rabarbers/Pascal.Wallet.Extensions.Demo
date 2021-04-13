@@ -8,5 +8,8 @@
     <Setting Name="WalletPort" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">4003</Value>
     </Setting>
+    <Setting Name="DefaultReceiver" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">834853</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -6,7 +6,7 @@
         xmlns:ViewModels="clr-namespace:PascalWalletExtensionDemo.ViewModels"
         xmlns:Views="clr-namespace:PascalWalletExtensionDemo.Views"
         mc:Ignorable="d"
-        Title="Pascal Wallet Extension Demo" Height="400" Width="850">
+        Title="Pascal Wallet Extension Demo" Height="460" Width="850">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -37,12 +37,12 @@
         </Grid.RowDefinitions>
 
         <Menu IsMainMenu="True" FontSize="14">
-            <MenuItem Header="Connection" Command="{Binding ConnectionCommand}" />
+            <MenuItem Header="Settings" Command="{Binding SettingsCommand}" />
             <MenuItem Header="DataOperation" Command="{Binding DataOperationCommand}" />
             <MenuItem Header="MultiOperation" Command="{Binding MultiOperationCommand}" />
             <MenuItem Header="Exit" Command="{Binding CloseCommand}" />
         </Menu>
 
-        <ContentControl Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding MainContent}" />
+        <ContentControl Grid.Row="1" Margin="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding MainContent}" />
     </Grid>
 </Window>

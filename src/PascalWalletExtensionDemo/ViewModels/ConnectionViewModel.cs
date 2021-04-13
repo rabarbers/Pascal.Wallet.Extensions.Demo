@@ -8,6 +8,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         private IConnectorHolder _connectorHolder;
         private string _address;
         private uint _port;
+        private uint _defaultReceiver;
 
         public ConnectionViewModel(IConnectorHolder connectorHolder)
         {
@@ -15,11 +16,12 @@ namespace PascalWalletExtensionDemo.ViewModels
 
             Address = Properties.Settings.Default.WalletAddress;
             Port = Properties.Settings.Default.WalletPort;
-            ReconnectCommand = new RelayCommand(ReconnectSettings, parameter => CanReconnectSettings());
+            DefaultReceiver = Properties.Settings.Default.DefaultReceiver;
+            SaveCommand = new RelayCommand(SaveSettings, parameter => CanSaveSettings());
             _connectorHolder.Connector = new PascalConnector(Address, Port);
         }
 
-        public ICommand ReconnectCommand { get; private set; }
+        public ICommand SaveCommand { get; private set; }
 
         public string Address
         {
@@ -41,17 +43,28 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
-        private void ReconnectSettings()
+        public uint DefaultReceiver
+        {
+            get { return _defaultReceiver; }
+            set
+            {
+                _defaultReceiver = value;
+                OnPropertyChanged(nameof(DefaultReceiver));
+            }
+        }
+
+        private void SaveSettings()
         {
             Properties.Settings.Default.WalletAddress = Address;
             Properties.Settings.Default.WalletPort = Port;
+            Properties.Settings.Default.DefaultReceiver = DefaultReceiver;
             Properties.Settings.Default.Save();
             _connectorHolder.Connector = new PascalConnector(Address, Port);
         }
 
-        private bool CanReconnectSettings()
+        private bool CanSaveSettings()
         {
-            return !string.IsNullOrEmpty(Address) && (Address != Properties.Settings.Default.WalletAddress || Port != Properties.Settings.Default.WalletPort);
+            return !string.IsNullOrEmpty(Address) && (Address != Properties.Settings.Default.WalletAddress || Port != Properties.Settings.Default.WalletPort || Properties.Settings.Default.DefaultReceiver != DefaultReceiver);
         }
     }
 }

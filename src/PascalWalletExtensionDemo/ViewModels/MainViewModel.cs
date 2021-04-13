@@ -4,10 +4,10 @@ using System.Windows.Input;
 
 namespace PascalWalletExtensionDemo.ViewModels
 {
-    public class MainViewModel: ViewModelBase, IConnectorHolder
+    public class MainViewModel : ViewModelBase, IConnectorHolder
     {
         private object _mainContent;
-        private ICommand _connectionCommand;
+        private ICommand _settingsCommand;
         private ICommand _dataOperationCommand;
         private ICommand _multiOperationCommand;
         private ConnectionViewModel _connectionViewModel;
@@ -19,9 +19,17 @@ namespace PascalWalletExtensionDemo.ViewModels
         {
             MainContent = _connectionViewModel = new ConnectionViewModel(this);
         }
-       
-        public ICommand ConnectionCommand => _connectionCommand ??= new RelayCommand(() => MainContent = _connectionViewModel ??= new ConnectionViewModel(this)); 
-        public ICommand DataOperationCommand => _dataOperationCommand ??= new RelayCommand(() => MainContent = _dataOperationViewModel ??= new DataOperationViewModel(this));
+
+        public ICommand SettingsCommand => _settingsCommand ??= new RelayCommand(() => MainContent = _connectionViewModel ??= new ConnectionViewModel(this));
+        public ICommand DataOperationCommand => _dataOperationCommand ??= new RelayCommandAsync(async () =>
+        {
+            var shouldInitialize = _dataOperationViewModel == null;
+            MainContent = _dataOperationViewModel ??= new DataOperationViewModel(this);
+            if (shouldInitialize)
+            {
+                await _dataOperationViewModel.InitializeAsync();
+            }
+        });
         public ICommand MultiOperationCommand => _multiOperationCommand ??= new RelayCommand(() => MainContent = _multiOperationViewModel ??= new MultiOperationViewModel(this));
         public ICommand CloseCommand => new RelayCommand(parameter => Application.Current.Shutdown());
 
