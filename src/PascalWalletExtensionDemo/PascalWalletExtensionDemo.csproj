@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Pascal.Wallet.Connector" Version="1.0.0" />
+    <PackageReference Include="Pascal.Wallet.Connector" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>

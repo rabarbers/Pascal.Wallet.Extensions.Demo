@@ -35,7 +35,7 @@
             <TextBlock Text="MainNet 4003, TestNet 4203" Margin="5" FontWeight="Thin" />
         </DockPanel>
 
-        <TextBlock Grid.Row="3" Margin="5" Text="Default receiver" FontWeight="Regular" />
+        <TextBlock Grid.Row="3" Margin="5" Text="Default receiver account" FontWeight="Regular" />
         <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2">
             <TextBox Margin="5" Text="{Binding DefaultReceiver, ValidatesOnDataErrors=True, ValidatesOnExceptions=True, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" Width="150" />
             <TextBlock Text="Used in data operations view" Margin="5" FontWeight="Thin" />
