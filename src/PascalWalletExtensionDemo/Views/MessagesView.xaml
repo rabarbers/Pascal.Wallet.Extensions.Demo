@@ -1,0 +1,51 @@
+﻿<UserControl x:Class="PascalWalletExtensionDemo.Views.MessagesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:PascalWalletExtensionDemo.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Margin="5">This view is not finished yet. Will be added message time, messages from pending blocks, message decryption and other stuff...</TextBlock>
+
+        <ListView Grid.Row="1" x:Name="deals" ItemsSource="{Binding Messages}" SelectedValue="{Binding SelectedDeal}">
+            <ListView.View>
+                <GridView x:Name="gridView">
+                    <GridViewColumn Width="150">
+                        <GridViewColumnHeader Content="Sender" />
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SenderAccount}" FontWeight="{Binding SenderFontWeight}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Width="150">
+                        <GridViewColumnHeader Content="Receiver" />
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ReceiverAccount}" FontWeight="{Binding ReceiverFontWeight}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Width="90" DisplayMemberBinding="{Binding BlockNumber}" Header="Block" />
+                    <GridViewColumn Width="400">
+                        <GridViewColumnHeader Content="Message" />
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="innerGrid">
+                                    <TextBlock Text="{Binding Payload}" />
+                                </Grid>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</UserControl>

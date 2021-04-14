@@ -5,11 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace PascalWalletExtensionDemo.ViewModels
 {
-    public class DataOperationViewModel: ViewModelBase
+    public class DataOperationViewModel: ViewModelBase, IErrorMessageHolder
     {
         private const decimal MinFee = 0.0001M;
         
@@ -32,7 +31,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         private IList<EncryptionMethod> _encryptionMethods;
         private string _password;
         private EncryptionMethod _selectedEncryptionMethod;
-        private bool _initialized;
+        private bool _isBusy;
 
         public DataOperationViewModel(IConnectorHolder connectorHolder)
         {
@@ -109,19 +108,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                         MaxLength = GetMessageLength(SenderAccount?.EncodedPublicKey);
                         break;
                     case PayloadMethod.Dest:
-                        var timer = new DispatcherTimer();
-                        timer.Tick += TimerTick;
-                        timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
-                        timer.Start();
-                        void TimerTick(object sender, EventArgs e)
-                        {
-                            timer.Stop();
-                            timer.Tick -= TimerTick;
-                            if (!_initialized)
-                            {
-                                InfoMessage = new InfoMessageViewModel("Retrieving receiver's public key...", null);
-                            }
-                        }
+                        ViewModelHelper.SetErrorMessage(this, "Retrieving receiver's public key...");
 
                         var error = new InfoMessageViewModel("Failed to retrieve receiver's public key!", () => InfoMessage = null, true);
                         _holder.Connector.GetAccountAsync(ReceiverAccount).ContinueWith(task =>
@@ -136,6 +123,19 @@ namespace PascalWalletExtensionDemo.ViewModels
                 }
                 _selectedEncryptionMethod = value;
                 OnPropertyChanged(nameof(SelectedEncryptionMethod));
+            }
+        }
+
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            private set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    OnPropertyChanged(nameof(IsBusy));
+                }
             }
         }
 
@@ -194,19 +194,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                 }
                 if (SelectedEncryptionMethod?.Method == PayloadMethod.Dest)
                 {
-                    var timer = new DispatcherTimer();
-                    timer.Tick += TimerTick;
-                    timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
-                    timer.Start();
-                    void TimerTick(object sender, EventArgs e)
-                    {
-                        timer.Stop();
-                        timer.Tick -= TimerTick;
-                        if (!_initialized)
-                        {
-                            InfoMessage = new InfoMessageViewModel("Retrieving receiver's public key...", null);
-                        }
-                    }
+                    ViewModelHelper.SetErrorMessage(this, "Retrieving receiver's public key...");
 
                     _holder.Connector.GetAccountAsync(value).ContinueWith(task =>
                     {
@@ -343,21 +331,9 @@ namespace PascalWalletExtensionDemo.ViewModels
 
         public async Task InitializeAsync()
         {
-            _initialized = false;
+            _isBusy = true;
 
-            var timer = new DispatcherTimer();
-            timer.Tick += TimerTick;
-            timer.Interval = new TimeSpan(0, 0, 0, 0, 400);
-            timer.Start();
-            void TimerTick(object sender, EventArgs e)
-            {
-                timer.Stop();
-                timer.Tick -= TimerTick;
-                if (!_initialized)
-                {
-                    InfoMessage = new InfoMessageViewModel("Loading accounts...", null);
-                }
-            }
+            ViewModelHelper.SetErrorMessage(this, "Loading accounts...");
 
             var accountsResponse = await _holder.Connector.GetWalletAccountsAsync(max: 500);
             if (accountsResponse.Result != null)
@@ -369,7 +345,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             {
                 InfoMessage = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
             }
-            _initialized = true;
+            _isBusy = false;
         }
 
         private async Task SendDataOperationAsync()
@@ -416,7 +392,7 @@ namespace PascalWalletExtensionDemo.ViewModels
 
         private bool CanRefresh()
         {
-            return _initialized;
+            return !_isBusy;
         }
 
         private bool CanSend()

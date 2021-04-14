@@ -9,9 +9,11 @@ namespace PascalWalletExtensionDemo.ViewModels
         private object _mainContent;
         private ICommand _settingsCommand;
         private ICommand _dataOperationCommand;
+        private ICommand _messagesCommand;
         private ICommand _multiOperationCommand;
         private ConnectionViewModel _connectionViewModel;
         private DataOperationViewModel _dataOperationViewModel;
+        private MessagesViewModel _messagesViewModel;
         private MultiOperationViewModel _multiOperationViewModel;
         private PascalConnector _connector;
 
@@ -28,6 +30,15 @@ namespace PascalWalletExtensionDemo.ViewModels
             if (shouldInitialize)
             {
                 await _dataOperationViewModel.InitializeAsync();
+            }
+        });
+        public ICommand MessagesCommand => _messagesCommand ??= new RelayCommandAsync(async () =>
+        {
+            var shouldInitialize = _messagesViewModel == null;
+            MainContent = _messagesViewModel ??= new MessagesViewModel(this);
+            if (shouldInitialize)
+            {
+                await _messagesViewModel.InitializeAsync();
             }
         });
         public ICommand MultiOperationCommand => _multiOperationCommand ??= new RelayCommand(() => MainContent = _multiOperationViewModel ??= new MultiOperationViewModel(this));
