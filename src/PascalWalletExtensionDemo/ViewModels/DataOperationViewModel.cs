@@ -25,6 +25,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         private string _guid;
         private int _maxLength;
         private int _messageLength;
+        private int _capacity;
         private int _partCount;
         private List<Account> _accounts;
         private List<Account> _accountsWithPasc;
@@ -307,6 +308,8 @@ namespace PascalWalletExtensionDemo.ViewModels
                     _messageLength = value;
                     OnPropertyChanged(nameof(MessageLength));
                     PartCount = MessageLength > 0 ? (int)Math.Ceiling((double)MessageLength / MaxLength) : 1;
+                    var remainder = value % MaxLength;
+                    Capacity = value == 0 ? MaxLength : (remainder > 0 ? MaxLength - remainder : 0);
                 }
             }
         }
@@ -321,6 +324,19 @@ namespace PascalWalletExtensionDemo.ViewModels
                     _partCount = value;
                     OnPropertyChanged(nameof(PartCount));
                     Fee = value > 1 ? MinFee * value : (AlwaysAddFee ? MinFee : 0);
+                }
+            }
+        }
+
+        public int Capacity
+        {
+            get { return _capacity; }
+            set
+            {
+                if (_capacity != value)
+                {
+                    _capacity = value;
+                    OnPropertyChanged(nameof(Capacity));
                 }
             }
         }
@@ -392,6 +408,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             Fee = 0;
             Amount = 0;
             MaxLength = 255;
+            Capacity = 255;
             MessageLength = 0;
             PartCount = 1;
             Password = null;
