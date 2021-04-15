@@ -21,14 +21,14 @@
         </Grid.RowDefinitions>
 
         <StackPanel Margin="10,0" Orientation="Horizontal">
-            <TextBlock Text="Under development: message time, messages from pending blocks, message decryption and other stuff..." VerticalAlignment="Center" />
-            <Button Margin="5" Content="Refresh" HorizontalAlignment="Left" Width="150" Padding="10,0" Command="{Binding RefreshCommand}" />
+            <TextBlock Text="Under development: currently no messages from pending blocks and no decryption for password encrypted messages." VerticalAlignment="Center" />
+            <Button Margin="5" Content="Refresh" HorizontalAlignment="Left" Width="120" Padding="10,0" Command="{Binding RefreshCommand}" />
         </StackPanel>
 
         <ListView Grid.Row="1" x:Name="deals" ItemsSource="{Binding Messages}" SelectedValue="{Binding SelectedDeal}">
             <ListView.View>
                 <GridView x:Name="gridView">
-                    <GridViewColumn Width="150">
+                    <GridViewColumn Width="120">
                         <GridViewColumnHeader Content="Sender" />
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -36,7 +36,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Width="150">
+                    <GridViewColumn Width="120">
                         <GridViewColumnHeader Content="Receiver" />
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -44,8 +44,9 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Width="90" DisplayMemberBinding="{Binding BlockNumber}" Header="Block" />
-                    <GridViewColumn Width="400">
+                    <GridViewColumn Width="80" DisplayMemberBinding="{Binding BlockNumber}" Header="Block" />
+                    <GridViewColumn Width="40" DisplayMemberBinding="{Binding Parts}" Header="Parts" />
+                    <GridViewColumn Width="40000">
                         <GridViewColumnHeader Content="Message" />
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
