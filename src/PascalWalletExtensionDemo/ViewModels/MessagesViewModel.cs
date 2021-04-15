@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace PascalWalletExtensionDemo.ViewModels
 {
-    public class MessagesViewModel: ViewModelBase, IErrorMessageHolder
+    public class MessagesViewModel: ViewModelBase
     {
         private readonly IConnectorHolder _holder;
         private InfoMessageViewModel _infoMessage;
@@ -20,7 +20,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         {
             _holder = connectorHolder;
 
-            RefreshCommand = new RelayCommandAsync(InitializeAsync, parameter => CanRefresh());
+            RefreshCommand = new RelayCommandAsync(InitializeAsync);
         }
 
         public ICommand RefreshCommand { get; private set; }
@@ -75,12 +75,11 @@ namespace PascalWalletExtensionDemo.ViewModels
         {
             _isBusy = true;
 
-            ViewModelHelper.SetErrorMessage(this, "Loading accounts...");
+            InfoMessage = new InfoMessageViewModel("Loading messages...", null);
             var accountsResponse = await _holder.Connector.GetWalletAccountsAsync(max: 500);
             if (accountsResponse.Result != null)
             {
                 Accounts = accountsResponse.Result.OrderBy(n => n.AccountNumber).ToList();
-                InfoMessage = null;
             }
             else
             {
@@ -89,7 +88,6 @@ namespace PascalWalletExtensionDemo.ViewModels
 
             var messages = new List<Message>();
 
-            ViewModelHelper.SetErrorMessage(this, "Loading messages...");
             foreach (var account in Accounts)
             {
                 var receivedMessagesResponse = await _holder.Connector.FindDataOperationsAsync(receiverAccount: account.AccountNumber, max: int.MaxValue);
@@ -103,7 +101,6 @@ namespace PascalWalletExtensionDemo.ViewModels
                         var message = new Message(op.Senders[0].AccountNumber, isContextUserSender, op.Receivers[0].AccountNumber, true, op.BlockNumber, op.Payload.FromHexString(), op.PayloadType);
                         messages.Add(message);
                     }
-                    InfoMessage = null;
                 }
                 else
                 {
@@ -121,7 +118,6 @@ namespace PascalWalletExtensionDemo.ViewModels
                         var message = new Message(op.Senders[0].AccountNumber, true,  op.Receivers[0].AccountNumber, isContextUserReceiver, op.BlockNumber, op.Payload.FromHexString(), op.PayloadType);
                         messages.Add(message);
                     }
-                    InfoMessage = null;
                 }
                 else
                 {
@@ -129,13 +125,9 @@ namespace PascalWalletExtensionDemo.ViewModels
                 }
             }
             Messages = messages.OrderByDescending(n => n.BlockNumber).ToList();
-            
-            _isBusy = false;
-        }
+            InfoMessage = null;
 
-        private bool CanRefresh()
-        {
-            return !_isBusy;
+            _isBusy = false;
         }
     }
 }

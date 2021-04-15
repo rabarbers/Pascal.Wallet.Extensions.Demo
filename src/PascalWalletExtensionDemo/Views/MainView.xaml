@@ -47,6 +47,6 @@
             <MenuItem Header="Exit" Command="{Binding CloseCommand}" />
         </Menu>
 
-        <ContentControl Grid.Row="1" Margin="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding MainContent}" />
+        <ContentControl Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="{Binding MainContent}" />
     </Grid>
 </Window>
