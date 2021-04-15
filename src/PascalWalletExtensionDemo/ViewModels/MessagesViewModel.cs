@@ -107,7 +107,17 @@ namespace PascalWalletExtensionDemo.ViewModels
                 var sentMessagesResponse = await _connectorHolder.Connector.FindDataOperationsAsync(senderAccount: account.AccountNumber, max: int.MaxValue);
                 if (sentMessagesResponse.Result != null)
                 {
-                    operations.AddRange(sentMessagesResponse.Result);
+                    foreach(var op in sentMessagesResponse.Result)
+                    {
+                        //TODO use dictionary
+                        var isContextUserSender = Accounts.Any(n => n.AccountNumber == op.Senders[0].AccountNumber);
+                        var isContextUserReceiver = Accounts.Any(n => n.AccountNumber == op.Receivers[0].AccountNumber);
+                        //if sender and receiver is your account, then avoid duplicate messages
+                        if (!isContextUserSender || !isContextUserReceiver)
+                        {
+                            operations.Add(op);
+                        }
+                    }
                 }
                 else
                 {
@@ -170,6 +180,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                                 else
                                 {
                                     payload = "Cannot decrypt, perhaps receiver's public key has changed.";
+                                    break;
                                 }
                             }
                             else
@@ -200,6 +211,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                                 else
                                 {
                                     payload = "Cannot decrypt, perhaps sender's public key has changed.";
+                                    break;
                                 }
                             }
                             else
@@ -230,6 +242,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                             else
                             {
                                 payload = "Cannot decrypt, wrong password.";
+                                break;
                             }
                         }
                         else
