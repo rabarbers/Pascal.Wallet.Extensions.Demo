@@ -35,7 +35,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         public ICommand MessagesCommand => _messagesCommand ??= new RelayCommandAsync(async () =>
         {
             var shouldInitialize = _messagesViewModel == null;
-            MainContent = _messagesViewModel ??= new MessagesViewModel(this);
+            MainContent = _messagesViewModel ??= new MessagesViewModel(this, _connectionViewModel);
             if (shouldInitialize)
             {
                 await _messagesViewModel.InitializeAsync();

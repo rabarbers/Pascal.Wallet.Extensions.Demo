@@ -1,6 +1,7 @@
 ﻿using Pascal.Wallet.Connector;
 using Pascal.Wallet.Connector.DTO;
 using PascalWalletExtensionDemo.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,15 +11,17 @@ namespace PascalWalletExtensionDemo.ViewModels
 {
     public class MessagesViewModel: ViewModelBase
     {
-        private readonly IConnectorHolder _holder;
+        private readonly IConnectorHolder _connectorHolder;
+        private readonly IPasswordsHolder _passwordsHolder;
         private InfoMessageViewModel _infoMessage;
         private bool _isBusy;
         private List<Account> _accounts;
         private List<Message> _messages;
 
-        public MessagesViewModel(IConnectorHolder connectorHolder)
+        public MessagesViewModel(IConnectorHolder connectorHolder, IPasswordsHolder passwordsHolder)
         {
-            _holder = connectorHolder;
+            _connectorHolder = connectorHolder;
+            _passwordsHolder = passwordsHolder;
 
             RefreshCommand = new RelayCommandAsync(InitializeAsync);
         }
@@ -76,7 +79,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             _isBusy = true;
 
             InfoMessage = new InfoMessageViewModel("Loading messages...", null);
-            var accountsResponse = await _holder.Connector.GetWalletAccountsAsync(max: 500);
+            var accountsResponse = await _connectorHolder.Connector.GetWalletAccountsAsync(max: 500);
             if (accountsResponse.Result != null)
             {
                 Accounts = accountsResponse.Result.OrderBy(n => n.AccountNumber).ToList();
@@ -90,7 +93,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             var operations = new List<Operation>();
             foreach (var account in Accounts)
             {
-                var receivedMessagesResponse = await _holder.Connector.FindDataOperationsAsync(receiverAccount: account.AccountNumber, max: int.MaxValue);
+                var receivedMessagesResponse = await _connectorHolder.Connector.FindDataOperationsAsync(receiverAccount: account.AccountNumber, max: int.MaxValue);
                 if (receivedMessagesResponse.Result != null)
                 {
                     operations.AddRange(receivedMessagesResponse.Result);
@@ -101,7 +104,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                     return;
                 }
 
-                var sentMessagesResponse = await _holder.Connector.FindDataOperationsAsync(senderAccount: account.AccountNumber, max: int.MaxValue);
+                var sentMessagesResponse = await _connectorHolder.Connector.FindDataOperationsAsync(senderAccount: account.AccountNumber, max: int.MaxValue);
                 if (sentMessagesResponse.Result != null)
                 {
                     operations.AddRange(sentMessagesResponse.Result);
@@ -157,7 +160,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                     {
                         foreach (var op in group.Items.OrderBy(n => n.Senders[0].Data.Sequence))
                         {
-                            var decryptionResponse = await _holder.Connector.PayloadDecryptAsync(op.Payload);
+                            var decryptionResponse = await _connectorHolder.Connector.PayloadDecryptAsync(op.Payload);
                             if (decryptionResponse.Result != null)
                             {
                                 if(decryptionResponse.Result.Result)
@@ -166,7 +169,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                                 }
                                 else
                                 {
-                                    payload += "Cannot decrypt, perhaps receiver's public key has changed.";
+                                    payload = "Cannot decrypt, perhaps receiver's public key has changed.";
                                 }
                             }
                             else
@@ -187,7 +190,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                     {
                         foreach (var op in group.Items.OrderBy(n => n.Senders[0].Data.Sequence))
                         {
-                            var decryptionResponse = await _holder.Connector.PayloadDecryptAsync(op.Payload);
+                            var decryptionResponse = await _connectorHolder.Connector.PayloadDecryptAsync(op.Payload);
                             if (decryptionResponse.Result != null)
                             {
                                 if (decryptionResponse.Result.Result)
@@ -196,7 +199,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                                 }
                                 else
                                 {
-                                    payload += "Cannot decrypt, perhaps sender's public key has changed.";
+                                    payload = "Cannot decrypt, perhaps sender's public key has changed.";
                                 }
                             }
                             else
@@ -214,7 +217,27 @@ namespace PascalWalletExtensionDemo.ViewModels
 
                 if (passwordEncrypted)
                 {
-                    payload = "Password encrypted";
+                    foreach (var op in group.Items.OrderBy(n => n.Senders[0].Data.Sequence))
+                    {
+                        
+                        var decryptionResponse = await _connectorHolder.Connector.PayloadDecryptAsync(op.Payload, _passwordsHolder.Passwords?.Split(Environment.NewLine) ?? new string[] { });
+                        if (decryptionResponse.Result != null)
+                        {
+                            if (decryptionResponse.Result.Result)
+                            {
+                                payload += decryptionResponse.Result.UnencryptedPayload;
+                            }
+                            else
+                            {
+                                payload = "Cannot decrypt, wrong password.";
+                            }
+                        }
+                        else
+                        {
+                            InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                            return;
+                        }
+                    }
                 }
 
                 var message = new Message(group.Key.SenderAccount, isContextUserSender, group.Key.ReceiverAccount, isContextUserReceiver, group.Key.BlockNumber, payload, group.Key.PayloadType, group.Items.Count());

@@ -21,7 +21,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Margin="10,0" Orientation="Horizontal">
-            <TextBlock Text="Under development: currently no messages from pending blocks and no decryption for password encrypted messages." VerticalAlignment="Center" />
+            <TextBlock Text="Under development: currently no messages from pending blocks." VerticalAlignment="Center" />
             <Button Margin="5" Content="Refresh" HorizontalAlignment="Left" Width="120" Padding="10,0" Command="{Binding RefreshCommand}" />
         </StackPanel>
 

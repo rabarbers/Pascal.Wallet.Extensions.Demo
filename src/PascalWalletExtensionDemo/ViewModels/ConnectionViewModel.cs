@@ -3,12 +3,14 @@ using System.Windows.Input;
 
 namespace PascalWalletExtensionDemo.ViewModels
 {
-    public class ConnectionViewModel: ViewModelBase
+    public class ConnectionViewModel: ViewModelBase, IPasswordsHolder
     {
         private IConnectorHolder _connectorHolder;
         private string _address;
         private uint _port;
         private uint _defaultReceiver;
+        private string _passwords;
+        private bool _passwordsChanged;
 
         public ConnectionViewModel(IConnectorHolder connectorHolder)
         {
@@ -28,8 +30,11 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _address; }
             set
             {
-                _address = value;
-                OnPropertyChanged(nameof(Address));
+                if(_address != value)
+                {
+                    _address = value;
+                    OnPropertyChanged(nameof(Address));
+                }
             }
         }
 
@@ -38,8 +43,11 @@ namespace PascalWalletExtensionDemo.ViewModels
             get { return _port; }
             set
             {
-                _port = value;
-                OnPropertyChanged(nameof(Port));
+                if (_port != value)
+                {
+                    _port = value;
+                    OnPropertyChanged(nameof(Port));
+                }
             }
         }
 
@@ -53,6 +61,20 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
+        public string Passwords
+        {
+            get { return _passwords; }
+            set
+            {
+                if (_passwords != value)
+                {
+                    _passwords = value;
+                    OnPropertyChanged(nameof(Passwords));
+                    _passwordsChanged = true;
+                }
+            }
+        }
+
         private void SaveSettings()
         {
             Properties.Settings.Default.WalletAddress = Address;
@@ -60,11 +82,13 @@ namespace PascalWalletExtensionDemo.ViewModels
             Properties.Settings.Default.DefaultReceiver = DefaultReceiver;
             Properties.Settings.Default.Save();
             _connectorHolder.Connector = new PascalConnector(Address, Port);
+            _passwordsChanged = false;
         }
 
         private bool CanSaveSettings()
         {
-            return !string.IsNullOrEmpty(Address) && (Address != Properties.Settings.Default.WalletAddress || Port != Properties.Settings.Default.WalletPort || Properties.Settings.Default.DefaultReceiver != DefaultReceiver);
+            return !string.IsNullOrEmpty(Address) && (Address != Properties.Settings.Default.WalletAddress || Port != Properties.Settings.Default.WalletPort
+                || Properties.Settings.Default.DefaultReceiver != DefaultReceiver || _passwordsChanged);
         }
     }
 }
