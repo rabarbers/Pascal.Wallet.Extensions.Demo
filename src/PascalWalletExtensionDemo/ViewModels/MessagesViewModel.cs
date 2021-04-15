@@ -84,6 +84,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             else
             {
                 InfoMessage = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                return;
             }
 
             var operations = new List<Operation>();
@@ -97,6 +98,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                 else
                 {
                     InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                    return;
                 }
 
                 var sentMessagesResponse = await _holder.Connector.FindDataOperationsAsync(senderAccount: account.AccountNumber, max: int.MaxValue);
@@ -107,6 +109,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                 else
                 {
                     InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                    return;
                 }
             }
 
@@ -169,6 +172,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                             else
                             {
                                 InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                                return;
                             }
                         }
                     }
@@ -198,6 +202,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                             else
                             {
                                 InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                                return;
                             }
                         }
                     }
