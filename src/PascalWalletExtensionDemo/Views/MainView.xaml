@@ -41,8 +41,7 @@
 
         <Menu IsMainMenu="True" FontSize="14">
             <MenuItem Header="Settings" Command="{Binding SettingsCommand}" />
-            <MenuItem Header="Send message" Command="{Binding DataOperationCommand}" />
-            <MenuItem Header="Read messages" Command="{Binding MessagesCommand}" />
+            <MenuItem Header="Messages" Command="{Binding MessagesCommand}" />
             <MenuItem Header="MultiOperation" Command="{Binding MultiOperationCommand}" />
             <MenuItem Header="Exit" Command="{Binding CloseCommand}" />
         </Menu>
