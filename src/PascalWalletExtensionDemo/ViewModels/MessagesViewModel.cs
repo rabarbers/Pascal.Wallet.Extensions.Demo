@@ -18,6 +18,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         private InfoMessageViewModel _infoMessage;
         private bool _isBusy;
         private List<Account> _accounts;
+        private List<uint> _previousReceivers = new List<uint>();
         private List<Account> _signerAccounts;
         private List<Message> _messages;
         private IList<EncryptionMethod> _encryptionMethods;
@@ -140,6 +141,19 @@ namespace PascalWalletExtensionDemo.ViewModels
             {
                 _accounts = value;
                 OnPropertyChanged(nameof(Accounts));
+            }
+        }
+
+        public List<uint> PreviousReceivers
+        {
+            get { return _previousReceivers; }
+            set
+            {
+                if(_previousReceivers != value)
+                {
+                    _previousReceivers = value;
+                    OnPropertyChanged(nameof(PreviousReceivers));
+                }
             }
         }
 
@@ -345,11 +359,15 @@ namespace PascalWalletExtensionDemo.ViewModels
         {
             _isBusy = true;
 
+            var accounts = new Dictionary<uint, Account>();
+            var previousReceivers = new Dictionary<uint, bool>();
+
             InfoMessage = new InfoMessageViewModel("Loading messages...", null);
             var accountsResponse = await _connectorHolder.Connector.GetWalletAccountsAsync(max: 500);
             if (accountsResponse.Result != null)
             {
                 Accounts = accountsResponse.Result.OrderBy(n => n.AccountNumber).ToList();
+                accounts = Accounts.ToDictionary(n => n.AccountNumber, n => n);
             }
             else
             {
@@ -376,14 +394,12 @@ namespace PascalWalletExtensionDemo.ViewModels
                 {
                     foreach(var op in sentMessagesResponse.Result)
                     {
-                        //TODO use dictionary
-                        var isContextUserSender = Accounts.Any(n => n.AccountNumber == op.Senders[0].AccountNumber);
-                        var isContextUserReceiver = Accounts.Any(n => n.AccountNumber == op.Receivers[0].AccountNumber);
                         //if sender and receiver is your account, then avoid duplicate messages
-                        if (!isContextUserSender || !isContextUserReceiver)
+                        if (!accounts.ContainsKey(op.Senders[0].AccountNumber) || !accounts.ContainsKey(op.Receivers[0].AccountNumber))
                         {
                             operations.Add(op);
                         }
+                        previousReceivers[op.Receivers[0].AccountNumber] = true;
                     }
                 }
                 else
@@ -392,6 +408,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                     return;
                 }
             }
+            PreviousReceivers = previousReceivers.Keys.OrderBy(n => n).ToList();
 
             var operationGroups = from operation in operations
                                   group operation by
@@ -414,9 +431,8 @@ namespace PascalWalletExtensionDemo.ViewModels
             var messages = new List<Message>();
             foreach (var group in operationGroups)
             {
-                //TODO use dictionary
-                var isContextUserSender = Accounts.Any(n => n.AccountNumber == group.Key.SenderAccount);
-                var isContextUserReceiver = Accounts.Any(n => n.AccountNumber == group.Key.ReceiverAccount);
+                var isContextUserSender = accounts.ContainsKey(group.Key.SenderAccount);
+                var isContextUserReceiver = accounts.ContainsKey(group.Key.ReceiverAccount);
 
                 string payload = "";
                 var isPublic = (group.Key.PayloadType & PayloadType.Public) == PayloadType.Public;
@@ -565,6 +581,8 @@ namespace PascalWalletExtensionDemo.ViewModels
 
             Messages = messages.OrderByDescending(n => n.BlockNumber).ToList();
             InfoMessage = null;
+            
+            SetDefaults();
 
             _isBusy = false;
         }
