@@ -537,9 +537,9 @@ namespace PascalWalletExtensionDemo.ViewModels
                 }
 
                 string senderName = string.Empty;
-                if(Accounts.Any(n => n.AccountNumber == group.Key.SenderAccount))
+                if(accounts.ContainsKey(group.Key.SenderAccount))
                 {
-                    senderName = Accounts.Where(n => n.AccountNumber == group.Key.SenderAccount).FirstOrDefault()?.Name;
+                    senderName = accounts[group.Key.SenderAccount].Name;
                 }
                 else
                 {
@@ -556,9 +556,9 @@ namespace PascalWalletExtensionDemo.ViewModels
                 }
 
                 string receiverName = string.Empty;
-                if (Accounts.Any(n => n.AccountNumber == group.Key.SenderAccount))
+                if (accounts.ContainsKey(group.Key.ReceiverAccount))
                 {
-                    receiverName = Accounts.Where(n => n.AccountNumber == group.Key.ReceiverAccount).FirstOrDefault()?.Name;
+                    receiverName = accounts[group.Key.ReceiverAccount].Name;
                 }
                 else
                 {
