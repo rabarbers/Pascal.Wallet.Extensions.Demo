@@ -6,7 +6,7 @@ namespace PascalWalletExtensionDemo.Models
 {
     public class Message
     {
-        public Message(uint sender, string senderName, bool senderIsContextUser, uint receiver, string receiverName, bool receiverIsContextUser, uint? blockNumber, string payload, PayloadType payloadType, int parts)
+        public Message(uint sender, string senderName, bool senderIsContextUser, uint receiver, string receiverName, bool receiverIsContextUser, uint? blockNumber, int index, string payload, PayloadType payloadType, int parts)
         {
             SenderAccount = sender;
             SenderName = senderName;
@@ -16,9 +16,11 @@ namespace PascalWalletExtensionDemo.Models
             ReceiverName = receiverName;
             ReceiverIsContextUser = receiverIsContextUser;
             BlockNumber = blockNumber;
+            Index = index;
             Payload = payload;
             PayloadType = payloadType;
             Parts = parts;
+
         }
 
         public uint SenderAccount { get; set; }
@@ -27,6 +29,7 @@ namespace PascalWalletExtensionDemo.Models
         public string ReceiverName { get; set; }
         public string Payload { get; set; }
         public uint? BlockNumber { get; set; }
+        public int Index { get; set; }
         private PayloadType PayloadType { get; set; }
         private bool SenderIsContextUser { get; set; }
         private bool ReceiverIsContextUser { get; set; }

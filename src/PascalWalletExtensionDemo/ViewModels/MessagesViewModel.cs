@@ -419,7 +419,8 @@ namespace PascalWalletExtensionDemo.ViewModels
                                       operation.BlockNumber,
                                       DataType = operation.Senders[0].Data.Type,
                                       operation.Senders[0].Data.Id,
-                                      operation.PayloadType
+                                      operation.PayloadType,
+                                      operation.Index
                                   }
                                   into operationsGroup
                                   select new
@@ -575,11 +576,12 @@ namespace PascalWalletExtensionDemo.ViewModels
                 }
 
 
-                var message = new Message(group.Key.SenderAccount, senderName, isContextUserSender, group.Key.ReceiverAccount, receiverName, isContextUserReceiver, group.Key.BlockNumber, payload, group.Key.PayloadType, group.Items.Count());
+                var message = new Message(group.Key.SenderAccount, senderName, isContextUserSender, group.Key.ReceiverAccount, receiverName, isContextUserReceiver,
+                    group.Key.BlockNumber, group.Key.Index, payload, group.Key.PayloadType, group.Items.Count());
                 messages.Add(message);
             }
 
-            Messages = messages.OrderByDescending(n => n.BlockNumber).ToList();
+            Messages = messages.OrderByDescending(n => n.BlockNumber).ThenByDescending(n => n.Index).ToList();
             InfoMessage = null;
             
             SetDefaults();
