@@ -589,6 +589,30 @@ namespace PascalWalletExtensionDemo.ViewModels
             _isBusy = false;
         }
 
+        private async Task GetNewMessagesAsync()
+        {
+            var pendingsResponse = await _connectorHolder.Connector.GetPendingsAsync(max: 1000);
+            if (pendingsResponse.Result != null)
+            {
+                var accountsDict = Accounts.ToDictionary(n => n.AccountNumber, n => n);
+                foreach (var op in pendingsResponse.Result)
+                {
+                    var senderIsContextUser = accountsDict.ContainsKey(op.Senders[0].AccountNumber);
+                    var receiverIsContextUser = accountsDict.ContainsKey(op.Receivers[0].AccountNumber);
+                    if ((senderIsContextUser || receiverIsContextUser) && !Messages.Any(n => n.BlockNumber == op.BlockNumber && n.Index == op.Index))
+                    {
+                        var newMessage = new Message(op.Senders[0].AccountNumber, "", senderIsContextUser, op.Receivers[0].AccountNumber, "", receiverIsContextUser,
+                            op.BlockNumber, op.Index, op.Payload, PayloadType.Public, 1);
+                        //Messages.Add();
+                    }
+                }
+            }
+            else
+            {
+                InfoMessage = new InfoMessageViewModel(pendingsResponse.Error?.Message, () => InfoMessage = null, true);
+            }
+        }
+
         private async Task SendDataOperationAsync()
         {
             string errorMessage = null;
