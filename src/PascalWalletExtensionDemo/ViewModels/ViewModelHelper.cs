@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 
 namespace PascalWalletExtensionDemo.ViewModels
@@ -15,7 +16,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             {
                 timer.Stop();
                 timer.Tick -= TimerTick;
-                if (holder.IsBusy && holder.InfoMessage == null)
+                if (holder.InfoMessage == null)
                 {
                     holder.InfoMessage = new InfoMessageViewModel(errorMessage, null);
                 }

@@ -6,10 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace PascalWalletExtensionDemo.ViewModels
 {
-    public class MessagesViewModel: ViewModelBase, IErrorMessageHolder
+    public class MessagesViewModel : ViewModelBase, IErrorMessageHolder
     {
         private const decimal MinFee = 0.0001M;
 
@@ -36,6 +37,8 @@ namespace PascalWalletExtensionDemo.ViewModels
         private int _capacity;
         private int _partCount;
         private string _guid;
+        private Dictionary<string, bool> _messageDictionary = new Dictionary<string, bool>(); //boolean state currently not used
+        private DispatcherTimer _timer;
 
         public MessagesViewModel(IConnectorHolder connectorHolder, IPasswordsHolder passwordsHolder)
         {
@@ -47,6 +50,19 @@ namespace PascalWalletExtensionDemo.ViewModels
 
             RefreshCommand = new RelayCommandAsync(InitializeAsync);
             SendCommand = new RelayCommandAsync(SendDataOperationAsync, parameter => CanSend());
+
+            _timer = new DispatcherTimer();
+            _timer.Tick += new EventHandler(TimerTick);
+            _timer.Interval = new TimeSpan(0, 0, Properties.Settings.Default.MessageRefreshingInterval);
+            _timer.Start();
+        }
+
+        private async void TimerTick(object sender, EventArgs e)
+        {
+            if (!_isBusy && Accounts?.Count > 0)
+            {
+                await GetNewMessagesAsync();
+            }
         }
 
         public ICommand SendCommand { get; private set; }
@@ -408,7 +424,46 @@ namespace PascalWalletExtensionDemo.ViewModels
                     return;
                 }
             }
+
+            _messageDictionary = operations.Select(n => n.Senders[0].Data.Id).Distinct().ToDictionary(n => n, n => true);
+
             PreviousReceivers = previousReceivers.Keys.OrderBy(n => n).ToList();
+
+            Messages = await CreateMessages(operations);
+            InfoMessage = null;
+
+            _isBusy = false;
+        }
+
+        private async Task GetNewMessagesAsync()
+        {
+            _isBusy = true;
+
+            var pendingsResponse = await _connectorHolder.Connector.GetPendingsAsync(max: 1000);
+            if (pendingsResponse.Result != null)
+            {
+                var accountsDict = Accounts.ToDictionary(n => n.AccountNumber, n => n);
+                var newOperationsRelatedToUser = pendingsResponse.Result
+                    .Where(n => n.Type == OperationType.DataOperation && (accountsDict.ContainsKey(n.Senders[0].AccountNumber) || accountsDict.ContainsKey(n.Receivers[0].AccountNumber)) && !_messageDictionary.ContainsKey(n.Senders[0].Data.Id)).ToList();
+
+                foreach(var newOperation in newOperationsRelatedToUser)
+                {
+                    _messageDictionary[newOperation.Senders[0].Data.Id] = false;
+                }
+
+                var newMessages = await CreateMessages(newOperationsRelatedToUser);
+                if(newMessages?.Count > 0)
+                {
+                    newMessages.AddRange(Messages);
+                    Messages = newMessages;
+                }
+            }
+            _isBusy = false;
+        }
+
+        private async Task<List<Message>> CreateMessages(IEnumerable<Operation> operations)
+        {
+            var accounts = Accounts.ToDictionary(n => n.AccountNumber, n => n);
 
             var operationGroups = from operation in operations
                                   group operation by
@@ -420,7 +475,6 @@ namespace PascalWalletExtensionDemo.ViewModels
                                       DataType = operation.Senders[0].Data.Type,
                                       operation.Senders[0].Data.Id,
                                       operation.PayloadType,
-                                      operation.Index
                                   }
                                   into operationsGroup
                                   select new
@@ -443,7 +497,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                 var isAscii = (group.Key.PayloadType & PayloadType.AsciiFormatted) == PayloadType.AsciiFormatted;
                 if (isPublic && isAscii || group.Key.PayloadType == PayloadType.NonDeterministic)
                 {
-                    foreach(var op in group.Items.OrderBy(n => n.Senders[0].Data.Sequence))
+                    foreach (var op in group.Items.OrderBy(n => n.Senders[0].Data.Sequence))
                     {
                         payload += op.Payload.FromHexString();
                     }
@@ -457,7 +511,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                             var decryptionResponse = await _connectorHolder.Connector.PayloadDecryptAsync(op.Payload);
                             if (decryptionResponse.Result != null)
                             {
-                                if(decryptionResponse.Result.Result)
+                                if (decryptionResponse.Result.Result)
                                 {
                                     payload += decryptionResponse.Result.UnencryptedPayload;
                                 }
@@ -470,7 +524,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                             else
                             {
                                 InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
-                                return;
+                                return null;
                             }
                         }
                     }
@@ -501,7 +555,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                             else
                             {
                                 InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
-                                return;
+                                return null;
                             }
                         }
                     }
@@ -515,7 +569,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                 {
                     foreach (var op in group.Items.OrderBy(n => n.Senders[0].Data.Sequence))
                     {
-                        
+
                         var decryptionResponse = await _connectorHolder.Connector.PayloadDecryptAsync(op.Payload, _passwordsHolder.Passwords?.Split(Environment.NewLine) ?? new string[] { });
                         if (decryptionResponse.Result != null)
                         {
@@ -532,13 +586,13 @@ namespace PascalWalletExtensionDemo.ViewModels
                         else
                         {
                             InfoMessage = new InfoMessageViewModel("Failed to load messages! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
-                            return;
+                            return null;
                         }
                     }
                 }
 
                 string senderName = string.Empty;
-                if(accounts.ContainsKey(group.Key.SenderAccount))
+                if (accounts.ContainsKey(group.Key.SenderAccount))
                 {
                     senderName = accounts[group.Key.SenderAccount].Name;
                 }
@@ -552,7 +606,7 @@ namespace PascalWalletExtensionDemo.ViewModels
                     else
                     {
                         InfoMessage = new InfoMessageViewModel("Failed to load sender name! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
-                        return;
+                        return null;
                     }
                 }
 
@@ -571,46 +625,16 @@ namespace PascalWalletExtensionDemo.ViewModels
                     else
                     {
                         InfoMessage = new InfoMessageViewModel("Failed to load receiver name! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
-                        return;
+                        return null;
                     }
                 }
 
-
                 var message = new Message(group.Key.SenderAccount, senderName, isContextUserSender, group.Key.ReceiverAccount, receiverName, isContextUserReceiver,
-                    group.Key.BlockNumber, group.Key.Index, payload, group.Key.PayloadType, group.Items.Count());
+                    group.Key.BlockNumber, group.Items.Max(n => n.Index), payload, group.Key.PayloadType, group.Items.Count());
                 messages.Add(message);
             }
 
-            Messages = messages.OrderByDescending(n => n.BlockNumber).ThenByDescending(n => n.Index).ToList();
-            InfoMessage = null;
-            
-            SetDefaults();
-
-            _isBusy = false;
-        }
-
-        private async Task GetNewMessagesAsync()
-        {
-            var pendingsResponse = await _connectorHolder.Connector.GetPendingsAsync(max: 1000);
-            if (pendingsResponse.Result != null)
-            {
-                var accountsDict = Accounts.ToDictionary(n => n.AccountNumber, n => n);
-                foreach (var op in pendingsResponse.Result)
-                {
-                    var senderIsContextUser = accountsDict.ContainsKey(op.Senders[0].AccountNumber);
-                    var receiverIsContextUser = accountsDict.ContainsKey(op.Receivers[0].AccountNumber);
-                    if ((senderIsContextUser || receiverIsContextUser) && !Messages.Any(n => n.BlockNumber == op.BlockNumber && n.Index == op.Index))
-                    {
-                        var newMessage = new Message(op.Senders[0].AccountNumber, "", senderIsContextUser, op.Receivers[0].AccountNumber, "", receiverIsContextUser,
-                            op.BlockNumber, op.Index, op.Payload, PayloadType.Public, 1);
-                        //Messages.Add();
-                    }
-                }
-            }
-            else
-            {
-                InfoMessage = new InfoMessageViewModel(pendingsResponse.Error?.Message, () => InfoMessage = null, true);
-            }
+            return messages.OrderByDescending(n => n.BlockNumber).ThenByDescending(n => n.Index).ToList();
         }
 
         private async Task SendDataOperationAsync()
@@ -629,7 +653,9 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
             if (errorMessage == null)
             {
-                await InitializeAsync();
+                _guid = Guid.NewGuid().ToString().ToUpper();
+                Message = null;
+                await GetNewMessagesAsync();
             }
             else
             {

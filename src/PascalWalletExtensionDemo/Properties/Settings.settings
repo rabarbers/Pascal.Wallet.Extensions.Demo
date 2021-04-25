@@ -11,5 +11,8 @@
     <Setting Name="DefaultReceiver" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">834853</Value>
     </Setting>
+    <Setting Name="MessageRefreshingInterval" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">30</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
