@@ -11,6 +11,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         private uint _defaultReceiver;
         private string _passwords;
         private bool _passwordsChanged;
+        private int _messageRefreshingInterval;
 
         public ConnectionViewModel(IConnectorHolder connectorHolder)
         {
@@ -19,6 +20,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             Address = Properties.Settings.Default.WalletAddress;
             Port = Properties.Settings.Default.WalletPort;
             DefaultReceiver = Properties.Settings.Default.DefaultReceiver;
+            MessageRefreshingInterval = Properties.Settings.Default.MessageRefreshingInterval;
             SaveCommand = new RelayCommand(SaveSettings, parameter => CanSaveSettings());
             _connectorHolder.Connector = new PascalConnector(Address, Port);
         }
@@ -61,6 +63,16 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
+        public int MessageRefreshingInterval
+        {
+            get { return _messageRefreshingInterval; }
+            set
+            {
+                _messageRefreshingInterval = value;
+                OnPropertyChanged(nameof(MessageRefreshingInterval));
+            }
+        }
+
         public string Passwords
         {
             get { return _passwords; }
@@ -80,6 +92,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             Properties.Settings.Default.WalletAddress = Address;
             Properties.Settings.Default.WalletPort = Port;
             Properties.Settings.Default.DefaultReceiver = DefaultReceiver;
+            Properties.Settings.Default.MessageRefreshingInterval = MessageRefreshingInterval;
             Properties.Settings.Default.Save();
             _connectorHolder.Connector = new PascalConnector(Address, Port);
             _passwordsChanged = false;
@@ -87,7 +100,7 @@ namespace PascalWalletExtensionDemo.ViewModels
 
         private bool CanSaveSettings()
         {
-            return !string.IsNullOrEmpty(Address) && (Address != Properties.Settings.Default.WalletAddress || Port != Properties.Settings.Default.WalletPort
+            return !string.IsNullOrEmpty(Address) && (Address != Properties.Settings.Default.WalletAddress || Port != Properties.Settings.Default.WalletPort || MessageRefreshingInterval != Properties.Settings.Default.MessageRefreshingInterval
                 || Properties.Settings.Default.DefaultReceiver != DefaultReceiver || _passwordsChanged);
         }
     }

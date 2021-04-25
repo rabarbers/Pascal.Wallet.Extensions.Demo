@@ -58,5 +58,17 @@ namespace PascalWalletExtensionDemo.Properties {
                 this["DefaultReceiver"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public int MessageRefreshingInterval {
+            get {
+                return ((int)(this["MessageRefreshingInterval"]));
+            }
+            set {
+                this["MessageRefreshingInterval"] = value;
+            }
+        }
     }
 }
