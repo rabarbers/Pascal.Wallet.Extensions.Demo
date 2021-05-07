@@ -119,8 +119,6 @@ namespace PascalWalletExtensionDemo.ViewModels
                         MaxLength = GetMessageLength(SenderAccount?.EncodedPublicKey);
                         break;
                     case PayloadMethod.Dest:
-                        ViewModelHelper.SetErrorMessage(this, "Retrieving receiver's public key...");
-
                         var error = new InfoMessageViewModel("Failed to retrieve receiver's public key!", () => InfoMessage = null, true);
                         _connectorHolder.Connector.GetAccountAsync(ReceiverAccount).ContinueWith(task =>
                         {
@@ -226,8 +224,6 @@ namespace PascalWalletExtensionDemo.ViewModels
                 }
                 if (SelectedEncryptionMethod?.Method == PayloadMethod.Dest)
                 {
-                    ViewModelHelper.SetErrorMessage(this, "Retrieving receiver's public key...");
-
                     _connectorHolder.Connector.GetAccountAsync(value).ContinueWith(task =>
                     {
                         if (task.Result.Result != null)
