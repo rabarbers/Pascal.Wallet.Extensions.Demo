@@ -14,5 +14,8 @@
     <Setting Name="MessageRefreshingInterval" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">30</Value>
     </Setting>
+    <Setting Name="ChatRooms" Type="System.String" Scope="User">
+      <Value Profile="(Default)">[{"Name":"community","AccountNumber":84537},{"Name":"room","AccountNumber":70437}]</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

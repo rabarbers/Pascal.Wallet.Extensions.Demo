@@ -375,15 +375,27 @@ namespace PascalWalletExtensionDemo.ViewModels
             var previousReceivers = new Dictionary<uint, bool>();
 
             InfoMessage = new InfoMessageViewModel("Loading messages...", null);
-            var accountsResponse = await _connectorHolder.Connector.GetWalletAccountsAsync(max: 500);
-            if (accountsResponse.Result != null)
+            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+            var keysResponse = await _connectorHolder.Connector.GetWalletPublicKeysAsync();
+            if (keysResponse.Result != null)
             {
-                Accounts = accountsResponse.Result.OrderBy(n => n.AccountNumber).ToList();
-                accounts = Accounts.ToDictionary(n => n.AccountNumber, n => n);
+                var usableKeys = keysResponse.Result.Where(n => n.CanUse).ToDictionary(n => n.EncodedPublicKey, n => n);
+
+                var accountsResponse = await _connectorHolder.Connector.GetWalletAccountsAsync(max: 500);
+                if (accountsResponse.Result != null)
+                {
+                    Accounts = accountsResponse.Result.Where(n => usableKeys.ContainsKey(n.EncodedPublicKey)).OrderBy(n => n.AccountNumber).ToList();
+                    accounts = Accounts.ToDictionary(n => n.AccountNumber, n => n);
+                }
+                else
+                {
+                    InfoMessage = errorInfo;
+                    return;
+                }
             }
             else
             {
-                InfoMessage = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                InfoMessage = errorInfo;
                 return;
             }
 

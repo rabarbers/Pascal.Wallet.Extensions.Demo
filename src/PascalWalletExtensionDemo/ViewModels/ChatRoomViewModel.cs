@@ -3,8 +3,10 @@ using Pascal.Wallet.Connector.DTO;
 using PascalWalletExtensionDemo.Models;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -21,7 +23,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         private InfoMessageViewModel _infoMessage;
         private bool _isBusy;
         private List<Account> _accounts;
-        private List<Account> _chatRoomAccounts = new List<Account>();
+        private ObservableCollection<AccountInfo> _chatRoomAccounts = new ObservableCollection<AccountInfo>();
         private List<Account> _signerAccounts;
         private List<Message> _messages;
         private IList<EncryptionMethod> _encryptionMethods;
@@ -29,7 +31,7 @@ namespace PascalWalletExtensionDemo.ViewModels
         private string _password;
         private Account _senderAccount;
         private Account _signerAccount;
-        private Account _receiverAccount;
+        private AccountInfo _receiverAccount;
         private string _message;
         private decimal _amount;
         private decimal _fee;
@@ -41,16 +43,21 @@ namespace PascalWalletExtensionDemo.ViewModels
         private string _guid;
         private Dictionary<string, bool> _messageDictionary = new Dictionary<string, bool>(); //boolean state currently not used
         private DispatcherTimer _timer;
+        private bool _isSelectedReceiver;
 
         public ChatRoomViewModel(IConnectorHolder connectorHolder, IPasswordsHolder passwordsHolder)
         {
             _connectorHolder = connectorHolder;
             _passwordsHolder = passwordsHolder;
 
+            _chatRoomAccounts = !string.IsNullOrEmpty(Properties.Settings.Default.ChatRooms)
+                ? new ObservableCollection<AccountInfo>(JsonSerializer.Deserialize<List<AccountInfo>>(Properties.Settings.Default.ChatRooms))
+                : new ObservableCollection<AccountInfo>();
+
             EncryptionMethods = EncryptionMethod.GetSupportedMethods();
             SetDefaults();
 
-            RefreshCommand = new RelayCommandAsync(InitializeAsync);
+            RefreshCommand = new RelayCommandAsync(InitializeAsync, parameter => !_isBusy);
             SendCommand = new RelayCommandAsync(SendDataOperationAsync, parameter => CanSend());
 
             _timer = new DispatcherTimer();
@@ -163,7 +170,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
-        public List<Account> ChatRoomAccounts
+        public ObservableCollection<AccountInfo> ChatRoomAccounts
         {
             get { return _chatRoomAccounts; }
             set
@@ -218,7 +225,7 @@ namespace PascalWalletExtensionDemo.ViewModels
             }
         }
 
-        public Account ReceiverAccount
+        public AccountInfo ReceiverAccount
         {
             get { return _receiverAccount; }
             set
@@ -265,6 +272,21 @@ namespace PascalWalletExtensionDemo.ViewModels
 
                 _receiverAccount = value;
                 OnPropertyChanged(nameof(ReceiverAccount));
+
+                IsSelectedReceiver = value != null;
+            }
+        }
+
+        public bool IsSelectedReceiver
+        {
+            get { return _isSelectedReceiver; }
+            set
+            {
+                if (_isSelectedReceiver != value)
+                {
+                    _isSelectedReceiver = value;
+                    OnPropertyChanged(nameof(IsSelectedReceiver));
+                }
             }
         }
 
@@ -396,35 +418,48 @@ namespace PascalWalletExtensionDemo.ViewModels
         {
             _isBusy = true;
 
-            var accounts = new Dictionary<uint, Account>();
-            var previousReceivers = new Dictionary<uint, bool>();
-
-            InfoMessage = new InfoMessageViewModel("Searching for chatrooms...", null);
-            var accountsResponse = await _connectorHolder.Connector.GetWalletAccountsAsync(max: 500);
-            if (accountsResponse.Result != null)
+            var errorInfo = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+            var keysResponse = await _connectorHolder.Connector.GetWalletPublicKeysAsync();
+            if (keysResponse.Result != null)
             {
-                Accounts = accountsResponse.Result.OrderBy(n => n.AccountNumber).ToList();
-                accounts = Accounts.ToDictionary(n => n.AccountNumber, n => n);
+                var usableKeys = keysResponse.Result.Where(n => n.CanUse).ToDictionary(n => n.EncodedPublicKey, n => n);
+
+                var accountsResponse = await _connectorHolder.Connector.GetWalletAccountsAsync(max: 500);
+                if (accountsResponse.Result != null)
+                {
+                    Accounts = accountsResponse.Result.Where(n => usableKeys.ContainsKey(n.EncodedPublicKey)).OrderBy(n => n.AccountNumber).ToList();
+                }
+                else
+                {
+                    InfoMessage = errorInfo;
+                    return;
+                }
             }
             else
             {
-                InfoMessage = new InfoMessageViewModel("Failed to load accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                InfoMessage = errorInfo;
                 return;
             }
 
             var chatRoomsResponse = await _connectorHolder.Connector.FindAccountsAsync(type: ChatRoomType);
             if (chatRoomsResponse.Result != null)
             {
-                ChatRoomAccounts = chatRoomsResponse.Result.Where(n => !string.IsNullOrEmpty(n.Name)).OrderBy(n => n.Name).ToList();
+                var freshChatrooms = chatRoomsResponse.Result.Where(n => !string.IsNullOrEmpty(n.Name)).Select(n => new AccountInfo(n.Name, n.AccountNumber)).OrderBy(n => n.Name).ToList();
+                foreach (var newChatroom in freshChatrooms.Where(n => !ChatRoomAccounts.Any(m => m.AccountNumber == n.AccountNumber)).ToList())
+                {
+                    ChatRoomAccounts.Add(newChatroom);
+                }
+
+                var serializedChatrooms = JsonSerializer.Serialize(ChatRoomAccounts);
+                Properties.Settings.Default.ChatRooms = serializedChatrooms;
+                Properties.Settings.Default.Save();
             }
             else
             {
-                InfoMessage = new InfoMessageViewModel("Failed to load chatroom accounts! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
-                ChatRoomAccounts = new List<Account>();
+                InfoMessage = new InfoMessageViewModel("Failed to load chatrooms! Check if Pascal Wallet is open and if it accepts connections.", () => InfoMessage = null, true);
+                ChatRoomAccounts = new ObservableCollection<AccountInfo>();
                 return;
             }
-
-            InfoMessage = null;
 
             _isBusy = false;
         }

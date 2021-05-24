@@ -70,5 +70,18 @@ namespace PascalWalletExtensionDemo.Properties {
                 this["MessageRefreshingInterval"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("[{\"Name\":\"community\",\"AccountNumber\":84537},{\"Name\":\"room\",\"AccountNumber\":70437}" +
+            "]")]
+        public string ChatRooms {
+            get {
+                return ((string)(this["ChatRooms"]));
+            }
+            set {
+                this["ChatRooms"] = value;
+            }
+        }
     }
 }

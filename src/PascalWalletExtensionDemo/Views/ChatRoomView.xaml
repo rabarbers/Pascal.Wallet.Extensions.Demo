@@ -10,6 +10,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <Views:EnumMatchConverter x:Key="enumConverter" />
+            <Views:BoolToVisibilityConverter x:Key="visibilityConverter" />
             <DataTemplate DataType="{x:Type ViewModels:InfoMessageViewModel}">
                 <Views:InfoMessageView />
             </DataTemplate>
@@ -25,6 +26,9 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="80" />
         </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center" Text="Select the chatroom to view the messages..."
+                   Visibility="{Binding IsSelectedReceiver, Converter={StaticResource visibilityConverter}, ConverterParameter=false}" />
 
         <ListBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{Binding Messages}" SelectedValue="{Binding SelectedDeal}">
             <ListBox.Template>
