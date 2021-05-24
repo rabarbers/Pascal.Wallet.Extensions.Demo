@@ -25,6 +25,9 @@
                     <DataTemplate DataType="{x:Type ViewModels:MultiOperationViewModel}">
                         <Views:MultiOperationView />
                     </DataTemplate>
+                    <DataTemplate DataType="{x:Type ViewModels:ChatRoomViewModel}">
+                        <Views:ChatRoomView />
+                    </DataTemplate>
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -41,8 +44,9 @@
 
         <Menu IsMainMenu="True" FontSize="14">
             <MenuItem Header="Settings" Command="{Binding SettingsCommand}" />
-            <MenuItem Header="Messages" Command="{Binding MessagesCommand}" />
-            <MenuItem Header="MultiOperation" Command="{Binding MultiOperationCommand}" />
+            <MenuItem Header="Private messages" Command="{Binding MessagesCommand}" />
+            <MenuItem Header="Chat rooms" Command="{Binding ChatRoomCommand}" />
+            <MenuItem Header="Multi-operation" Command="{Binding MultiOperationCommand}" Visibility="Collapsed" />
             <MenuItem Header="Exit" Command="{Binding CloseCommand}" />
         </Menu>
 

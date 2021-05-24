@@ -10,10 +10,12 @@ namespace PascalWalletExtensionDemo.ViewModels
         private ICommand _settingsCommand;
         private ICommand _dataOperationCommand;
         private ICommand _messagesCommand;
+        private ICommand _chatRoomCommand;
         private ICommand _multiOperationCommand;
         private ConnectionViewModel _connectionViewModel;
         private DataOperationViewModel _dataOperationViewModel;
         private MessagesViewModel _messagesViewModel;
+        private ChatRoomViewModel _chatRoomViewModel;
         private MultiOperationViewModel _multiOperationViewModel;
         private PascalConnector _connector;
 
@@ -39,6 +41,15 @@ namespace PascalWalletExtensionDemo.ViewModels
             if (shouldInitialize)
             {
                 await _messagesViewModel.InitializeAsync();
+            }
+        });
+        public ICommand ChatRoomCommand => _chatRoomCommand ??= new RelayCommandAsync(async () =>
+        {
+            var shouldInitialize = _chatRoomViewModel == null;
+            MainContent = _chatRoomViewModel ??= new ChatRoomViewModel(this, _connectionViewModel);
+            if (shouldInitialize)
+            {
+                await _chatRoomViewModel.InitializeAsync();
             }
         });
         public ICommand MultiOperationCommand => _multiOperationCommand ??= new RelayCommand(() => MainContent = _multiOperationViewModel ??= new MultiOperationViewModel(this));
